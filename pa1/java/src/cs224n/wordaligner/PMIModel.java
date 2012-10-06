@@ -1,8 +1,3 @@
-package cs224n.wordaligner;  
-
-import cs224n.util.*;
-import java.util.List;
-
 /**
  * Simple word alignment baseline model that maps source positions to target 
  * positions along the diagonal of the alignment grid..
@@ -14,7 +9,6 @@ import java.util.List;
 package cs224n.wordaligner;  
 
 import cs224n.util.*;
-
 import java.util.List;
 import java.util.Map;
 
