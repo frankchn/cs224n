@@ -26,6 +26,10 @@ public class PMIModel implements WordAligner {
     int numTargetWords = sentencePair.getTargetWords().size();
     sentencePair.sourceWords.add(NULL_WORD);
 
+    double stc = sourceTargetCounts.totalCount();
+    double sc  = sourceCounts.totalCount();
+    double tc  = targetCounts.totalCount();
+
     for(int n = 0; n < numTargetWords; ++n) {
       String target = sentencePair.getTargetWords().get(n);
       
@@ -34,12 +38,12 @@ public class PMIModel implements WordAligner {
 
       for(int m = 0; m < numSourceWords; ++m) {
         String source = sentencePair.getSourceWords().get(m);
-        double pfe = sourceTargetCounts.getCount(source, target);
-        double pf  = sourceCounts.getCount(source);
-        double pe  = targetCounts.getCount(target);
+        double pfe = sourceTargetCounts.getCount(source, target) / stc;
+        double pf  = sourceCounts.getCount(source) / sc;
+        double pe  = targetCounts.getCount(target) / tc;
         double p   = 0.0;
 
-        p = (pf > 0 && pe > 0) ? pfe / (pf * pe) : 0;
+        p = (pf > 0.0 && pe > 0.0) ? (pfe / (pf * pe)) : 0.0;
  
         if(p > max_p) {
           best_m = m;
@@ -48,7 +52,7 @@ public class PMIModel implements WordAligner {
       }
 
       if(best_m >= 0 && best_m < numSourceWords) {
-         alignment.addPredictedAlignment(best_m, n);
+         alignment.addPredictedAlignment(n, best_m);
       }
     }
     return alignment;
@@ -64,12 +68,14 @@ public class PMIModel implements WordAligner {
       for(String target : targetWords)
         targetCounts.incrementCount(target, 1);
 
+      if(targetWords.size() > sourceWords.size())
+        sourceCounts.incrementCount(NULL_WORD, 1);
+
       for(String source : sourceWords){
         for(String target : targetWords){
           sourceTargetCounts.incrementCount(source, target, 1);
         	if(targetWords.size() > sourceWords.size()) {
             sourceTargetCounts.incrementCount(NULL_WORD, target, 1);
-            sourceCounts.incrementCount(NULL_WORD, 1);
           }
         }
       }
