@@ -10,6 +10,14 @@ import java.util.List;
  * @author Daniel Chia
  * @author Frank Chen
  */
+
+package cs224n.wordaligner;  
+
+import cs224n.util.*;
+
+import java.util.List;
+import java.util.Map;
+
 public class PMIModel implements WordAligner {
 
   private static final long serialVersionUID = 1315751943476440515L;
@@ -54,7 +62,7 @@ public class PMIModel implements WordAligner {
       if(best_m >= 0 && best_m < numSourceWords) {
          alignment.addPredictedAlignment(n, best_m);
       }
-    }
+    } 
     return alignment;
   }
 
@@ -82,3 +90,5 @@ public class PMIModel implements WordAligner {
     }
   }
 }
+
+
