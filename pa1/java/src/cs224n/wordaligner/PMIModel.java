@@ -21,6 +21,10 @@ public class PMIModel implements WordAligner {
   private Counter<String> sourceCounts = new Counter<String>();
   private Counter<String> targetCounts = new Counter<String>();
   private CounterMap<String,String> sourceTargetCounts = new CounterMap<String,String>();
+  
+  private double sctotal = -1.0;
+  private double tctotal = -1.0;
+  private double stctotal = -1.0;
 
   public Alignment align(SentencePair sentencePair) {
     Alignment alignment = new Alignment();
@@ -28,9 +32,13 @@ public class PMIModel implements WordAligner {
     int numTargetWords = sentencePair.getTargetWords().size();
     sentencePair.sourceWords.add(NULL_WORD);
 
-    double stc = sourceTargetCounts.totalCount();
-    double sc  = sourceCounts.totalCount();
-    double tc  = targetCounts.totalCount();
+    double stc = stctotal < 0.0 ? sourceTargetCounts.totalCount() : stctotal;
+    double sc  = sctotal < 0.0 ? sourceCounts.totalCount() : sctotal;
+    double tc  = tctotal < 0.0 ? targetCounts.totalCount() : tctotal;
+    
+    stctotal = stc;
+    sctotal = sc;
+    tctotal = tc;
 
     for(int n = 0; n < numTargetWords; ++n) {
       String target = sentencePair.getTargetWords().get(n);
