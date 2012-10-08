@@ -21,7 +21,7 @@ public class IBMModel2 implements WordAligner {
   private static final long serialVersionUID = 1974871312762799978L;
   
   public static final double CONVERGENCE_TOLERANCE = 1e-7;
-  public static final int MAX_ITERATIONS = 80;
+  public static final int MAX_ITERATIONS = 180;
   
   // counters to keep track of statistics
   // source is key, target are the values
