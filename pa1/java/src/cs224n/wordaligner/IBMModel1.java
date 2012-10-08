@@ -59,7 +59,7 @@ public class IBMModel1 implements WordAligner {
 
   @Override
   public void train(List<SentencePair> trainingData) {
-    System.out.println("Training..");
+    System.out.println("Training IBM Model 1..");
     
     probTargetGivenSource = new CounterMap<String,String>();
     
@@ -132,5 +132,9 @@ public class IBMModel1 implements WordAligner {
     }while(deviation > 1e-9 * numEntries);
     
     System.out.println("Training done.");
+  }
+
+  public CounterMap<String, String> getProbTargetGivenSource() {
+    return probTargetGivenSource;
   }
 }
