@@ -30,14 +30,17 @@ public class IBMModel1 implements WordAligner {
     Alignment alignment = new Alignment();
     
     List<String> targetWords = sentencePair.getTargetWords();
+
     for (int targetWordIndex = 0; targetWordIndex < targetWords.size(); targetWordIndex++) {
       String targetWord = targetWords.get(targetWordIndex);
       List<String> sourceWords = sentencePair.getSourceWords();
       
       double maxProb = -1.0;
-      int maxProbSourceWordIndex = 0;
+      int maxProbSourceWordIndex = -1;
+      int looptimes = (sourceWords.get(sourceWords.size() - 1).equals(WordAligner.NULL_WORD)) ?
+                       sourceWords.size() : sourceWords.size() + 1;
       
-      for (int sourceWordIndex = 0; sourceWordIndex <= sourceWords.size(); sourceWordIndex++) {
+      for (int sourceWordIndex = 0; sourceWordIndex < looptimes; sourceWordIndex++) {
         // extract source word (being careful of null)
         String sourceWord = (sourceWordIndex < sourceWords.size()) ? 
                             sourceWords.get(sourceWordIndex) :
@@ -49,9 +52,10 @@ public class IBMModel1 implements WordAligner {
           maxProbSourceWordIndex = sourceWordIndex;
         }
       }
-        
-      if (maxProbSourceWordIndex != sourceWords.size())  // skip NULL words
+
+      if (maxProbSourceWordIndex != sourceWords.size()) { // skip NULL words
         alignment.addPredictedAlignment(targetWordIndex, maxProbSourceWordIndex);
+      }
     }
     
     return alignment;
@@ -131,6 +135,11 @@ public class IBMModel1 implements WordAligner {
       System.out.println("Iteration " + iteration + ": " + deviation);
     }while(deviation > 1e-9 * numEntries);
     
+    for (SentencePair sentencePair: trainingData) {
+      List<String> sourceWords = sentencePair.getSourceWords();
+      sourceWords.remove(sourceWords.size() - 1);
+    }
+
     System.out.println("Training done.");
   }
 
