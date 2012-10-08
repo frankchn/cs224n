@@ -17,6 +17,8 @@ import cs224n.util.Counters;
  */
 
 public class IBMModel1 implements WordAligner {
+  public static final double CONVERGENCE_TOLERANCE = 1e-7;
+  public static final int MAX_ITERATIONS = 80;
 
   private static final long serialVersionUID = -4028412990771030273L;
   
@@ -133,7 +135,7 @@ public class IBMModel1 implements WordAligner {
       
       iteration++;
       System.out.println("Iteration " + iteration + ": " + deviation);
-    }while(deviation > 1e-9 * numEntries);
+    }while(deviation > CONVERGENCE_TOLERANCE * numEntries && iteration < MAX_ITERATIONS);
     
     for (SentencePair sentencePair: trainingData) {
       List<String> sourceWords = sentencePair.getSourceWords();

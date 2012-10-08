@@ -20,6 +20,9 @@ import cs224n.util.Counters;
 public class IBMModel2 implements WordAligner {
   private static final long serialVersionUID = 1974871312762799978L;
   
+  public static final double CONVERGENCE_TOLERANCE = 1e-7;
+  public static final int MAX_ITERATIONS = 80;
+  
   // counters to keep track of statistics
   // source is key, target are the values
   // corresponds to t(e|f)
@@ -204,7 +207,7 @@ public class IBMModel2 implements WordAligner {
       
       iteration++;
       System.out.println("Iteration " + iteration + ": " + deviation);
-    }while(deviation > 1e-8 * numEntries);
+    }while(deviation > CONVERGENCE_TOLERANCE * numEntries && iteration < MAX_ITERATIONS);
     
     System.out.println("Training done.");
   }
