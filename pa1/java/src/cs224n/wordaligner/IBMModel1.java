@@ -97,21 +97,34 @@ public class IBMModel1 implements WordAligner {
       CounterMap<String, String> countTargetSource = new CounterMap<String,String>();
       
       for (SentencePair sentencePair: trainingData) {
-        Counter<String> totalTarget = new Counter<String>();
-        // precalculate sum_i t(e^(k)|f^(k)_i)
-        for (String targetWord: sentencePair.getTargetWords())
-          for (String sourceWord: sentencePair.getSourceWords()) {
-            totalTarget.incrementCount(
-              targetWord, 
-              probTargetGivenSource.getCount(sourceWord, targetWord)
-            );
-          }
+        List<String> targetWords = sentencePair.getTargetWords();
+        int targetSentenceLength = targetWords.size();
         
-        for (String targetWord: sentencePair.getTargetWords())
+        double[] totalTarget = new double[targetSentenceLength];
+        
+        // precalculate sum_i t(e^(k)|f^(k)_i)
+        for (int targetWordIndex = 0; targetWordIndex < targetSentenceLength; targetWordIndex++) {
+          String targetWord = targetWords.get(targetWordIndex);
+          double sum = 0.0;
+          
           for (String sourceWord: sentencePair.getSourceWords()) {
-            double update = probTargetGivenSource.getCount(sourceWord, targetWord) / totalTarget.getCount(targetWord);
-            countTargetSource.incrementCount(sourceWord, targetWord, update);
+            sum += probTargetGivenSource.getCount(sourceWord, targetWord);
           }
+         
+          totalTarget[targetWordIndex] = sum;
+        }
+        
+        for (String sourceWord: sentencePair.getSourceWords()) {
+          Counter<String> countTargetForSource = countTargetSource.getCounter(sourceWord);
+          Counter<String> probTargetGivenSourceForSource = probTargetGivenSource.getCounter(sourceWord);
+          
+          for (int targetWordIndex = 0; targetWordIndex < targetSentenceLength; targetWordIndex++) {
+            String targetWord = targetWords.get(targetWordIndex);
+            
+            double update = probTargetGivenSourceForSource.getCount(targetWord) / totalTarget[targetWordIndex];
+            countTargetForSource.incrementCount(targetWord, update);
+          }
+        }
       }
       
       // M-step

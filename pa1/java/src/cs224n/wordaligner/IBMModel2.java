@@ -125,10 +125,11 @@ public class IBMModel2 implements WordAligner {
         
         // precalculate sum_i q(j| i,l^(k),m^(k)) t(e^(k)|f^(k)_i)
         // key is target word, value is j (target word index)
-        Counter<Integer> precalcDenominator = new Counter<Integer>();
+        double[] precalcDenominator = new double[targetSentenceLength];
         
         for (int j = 0; j < targetSentenceLength; j++) {
           String targetWord = targetWords.get(j);
+          
           // p(I|j,l,m)
           Counter<Integer> conditionalProb =
               probAlignment.getCounter(new IntegerTriple(j, sourceSentenceLength,
@@ -141,23 +142,26 @@ public class IBMModel2 implements WordAligner {
             sum += conditionalProb.getCount(i) * probTargetGivenSource.getCount(sourceWord, targetWord);
           }
           
-          precalcDenominator.setCount(j, sum);
+          precalcDenominator[j] = sum;
         }
         
         for (int j = 0; j < targetSentenceLength; j++) {
           String targetWord = targetWords.get(j);
           IntegerTriple currentJLM = new IntegerTriple(j, sourceSentenceLength, targetSentenceLength);
+          
           // p(I|j,l,m)
           Counter<Integer> conditionalProb = probAlignment.getCounter(currentJLM);
+          
+          Counter<Integer> countAlignmentGivenJLM = countAlignment.getCounter(currentJLM);
           
           for (int i = 0; i <= sourceSentenceLength; i++) {
             String sourceWord = (i < sourceSentenceLength) ? sourceWords.get(i) : WordAligner.NULL_WORD;
             double updateNumerator = conditionalProb.getCount(i) * probTargetGivenSource.getCount(sourceWord, targetWord);
-            double updateDenominator = precalcDenominator.getCount(j);
+            double updateDenominator = precalcDenominator[j];
             double update = updateNumerator / updateDenominator;
             
             countTargetSource.incrementCount(sourceWord, targetWord, update);
-            countAlignment.incrementCount(currentJLM, i, update);
+            countAlignmentGivenJLM.incrementCount(i, update);
           }
         }
       }
@@ -198,17 +202,25 @@ public class IBMModel2 implements WordAligner {
   }
   
   // simple container class to hold a (int, int, int) set
+  // immutable
   class IntegerTriple {
     private int x, y, z;
+    private int hashcode;
     
     public IntegerTriple(int x, int y, int z) {
       this.x = x;
       this.y = y;
       this.z = z;
+      
+      hashcode = calculateHashCode();
     }
     
     @Override
     public int hashCode() {
+      return hashcode;
+    }
+    
+    public int calculateHashCode() {
       final int prime = 31;
       int result = 1;
       result = prime * result + getOuterType().hashCode();
