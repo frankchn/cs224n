@@ -21,7 +21,7 @@ public class IBMModel2 implements WordAligner {
   private static final long serialVersionUID = 1974871312762799978L;
   
   public static final double CONVERGENCE_TOLERANCE = 1e-7;
-  public static final int MAX_ITERATIONS = 80;
+  public static final int MAX_ITERATIONS = 180;
   
   // counters to keep track of statistics
   // source is key, target are the values
@@ -80,21 +80,6 @@ public class IBMModel2 implements WordAligner {
     // init q(i|j,l,m) to be random
     Random random = new Random();
     probAlignment = new CounterMap<IntegerTriple, Integer>();
-    //for (SentencePair sentencePair: trainingData) {
-    //  List<String> sourceWords = sentencePair.getSourceWords();
-    //  List<String> targetWords = sentencePair.getTargetWords();
-    //  
-    //  int sourceSentenceLength = sourceWords.size() - 1;
-    //  IntegerTriple triple = new IntegerTriple(0, sourceSentenceLength, targetWords.size());
-    //  for (int j = 0; j < targetWords.size(); j++) {
-    //    triple.x = j;
-    //    
-    //    for (int i = 0; i <= sourceSentenceLength; i++)
-    //      probAlignment.setCount(triple, i, random.nextDouble() + 0.1);
-    //  }
-    //}
-    //probAlignment = Counters.conditionalNormalize(probAlignment);   // normalize
-    
     
     for (SentencePair sentencePair: trainingData) {
       List<String> targetWords = sentencePair.getTargetWords();
@@ -214,7 +199,7 @@ public class IBMModel2 implements WordAligner {
   
   // simple container class to hold a (int, int, int) set
   class IntegerTriple {
-    public int x, y, z;
+    private int x, y, z;
     
     public IntegerTriple(int x, int y, int z) {
       this.x = x;
