@@ -1,1 +1,0 @@
-/afs/ir/class/cs224n/pa1/data/mt/training/corpus.e
