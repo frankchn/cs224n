@@ -41,16 +41,172 @@ public class PCFGParserTester {
 		private Grammar grammar;
 		private Lexicon lexicon;
 
+		private void debugPrintln(String s) {
+			if(false) System.out.println(s);
+		}
+
 		public void train(List<Tree<String>> trainTrees) {
-			// TODO: before you generate your grammar, the training trees
-			// need to be binarized so that rules are at most binary
-			lexicon = new Lexicon(trainTrees);
-			grammar = new Grammar(trainTrees);
+			
+			System.out.println("Starting Training Process....");
+
+			ArrayList<Tree<String>> aTrees = new ArrayList<Tree<String>>();
+			for(Tree<String> tree : trainTrees) {
+				aTrees.add(TreeAnnotations.annotateTree(tree));
+			}
+
+			lexicon = new Lexicon(aTrees);
+			grammar = new Grammar(aTrees);
+
+			System.out.println("Training Process Done.");
+			debugPrintln("Grammar:");
+			System.out.println(grammar);
+
 		}
 
 		public Tree<String> getBestParse(List<String> sentence) {
-			// TODO: implement this method
-			return null;
+
+			long startTime = System.currentTimeMillis();
+
+			Set<String> nonterminals = grammar.getNonterminals();
+
+			// score = new double[words+1][words+1][nonterms]
+			ArrayList<ArrayList<Counter<String>>> score = new ArrayList<ArrayList<Counter<String>>>();
+			ArrayList<ArrayList<Map<String, Triplet<Integer, String, String>>>> back = 
+				new ArrayList<ArrayList<Map<String, Triplet<Integer, String, String>>>>();
+
+			for(int i = 0; i <= sentence.size(); i++) {
+				score.add(i, new ArrayList<Counter<String>>());
+				back.add(i, new ArrayList<Map<String, Triplet<Integer, String, String>>>());
+				for(int j = 0; j <= sentence.size(); j++) {
+					score.get(i).add(j, new Counter<String>());
+					back.get(i).add(j, new HashMap<String, Triplet<Integer, String, String>>());
+				}
+			}
+
+			// To process the current word to a tag as the first step
+			// for i = 0; i < words.len; i++
+			for(int i = 0; i < sentence.size(); i++) {
+				String word = sentence.get(i);
+				for (String tag : lexicon.getAllTags()) {
+					debugPrintln("(1) set " + i + ", " + (i + 1) + ", " + tag + " to " + lexicon.scoreTagging(word, tag));
+					score.get(i).get(i+1).setCount(tag, lexicon.scoreTagging(word, tag));
+				}
+
+				// handle unaries
+				boolean added = true;
+				while(added) {
+					added = false;
+					for(String b : nonterminals) {
+						for(UnaryRule r : grammar.getUnaryRulesByChild(b)) {
+							double p = r.getScore() * score.get(i).get(i+1).getCount(b);
+							String a = r.getParent();
+							debugPrintln("Unary transition " + a + " -> " + b + " at " + i + " : " + p);
+							if(p > score.get(i).get(i+1).getCount(a)) {
+								debugPrintln("(2) set " + i + ", " + (i + 1) + ", " + a + " to " + p);
+								score.get(i).get(i+1).setCount(a, p);
+								back.get(i).get(i+1).put(a, new Triplet<Integer, String, String>(-1, b, null));
+								added = true;
+							}
+						}
+					}
+				}
+			}
+
+			for(int span = 2; span <= sentence.size(); span++) {
+				for(int begin = 0; begin <= sentence.size() - span; begin++) {
+					int end = begin + span;
+					for(int split = begin + 1; split <= end - 1; split++) {
+						for(String b : nonterminals) {
+							// we are looking at r: a -> b c
+							for(BinaryRule r : grammar.getBinaryRulesByLeftChild(b)) {
+								String a = r.getParent();
+								String c = r.getRightChild();
+
+								double p = score.get(begin).get(split).getCount(b) *
+										    score.get(split).get(end).getCount(c) *
+											r.getScore();
+
+								debugPrintln(begin + "->" + split + " (" + b + "):" + score.get(begin).get(split).getCount(b) + 
+									", " + split + "->" + end + " (" + c + "):" + score.get(split).get(end).getCount(c) +
+									", r:" + r.getScore());
+								debugPrintln("p:" + p + ", score:" + score.get(begin).get(end).getCount(a));
+
+								if(p > score.get(begin).get(end).getCount(a)) {
+									debugPrintln("(3) set " + begin + ", " + end + ", " + a + " to " + p);
+									score.get(begin).get(end).setCount(a, p);
+									back.get(begin).get(end).put(a, new Triplet<Integer, String, String>(split, b, c));
+								}
+
+								debugPrintln(" ");
+							}
+						}
+					}
+
+					// handle unaries again
+					boolean added = true;
+					while(added) {
+						added = false;
+						for(String b : nonterminals) {
+							for(UnaryRule r : grammar.getUnaryRulesByChild(b)) {
+								double p = r.getScore() * score.get(begin).get(end).getCount(b);
+								String a = r.getParent();
+								if(p > score.get(begin).get(end).getCount(a)) {
+									score.get(begin).get(end).setCount(a, p);
+									back.get(begin).get(end).put(a, new Triplet<Integer, String, String>(-1, b, null));
+									added = true;
+									debugPrintln("(4) set " + begin + ", " + end + ", " + a + " to " + p);
+								}
+								debugPrintln(" ");
+							}
+						}
+					}
+				}
+			} 
+
+			Tree<String> finalTree = TreeAnnotations.unAnnotateTree(buildTree(sentence, score, back));
+
+			long endTime = System.currentTimeMillis();
+			System.out.println("Parsing this tree took " + (endTime - startTime) + " milliseconds.");
+
+			return finalTree;
+		}
+
+		private Tree<String> buildTree(List<String> sentence,
+										ArrayList<ArrayList<Counter<String>>> score,
+										ArrayList<ArrayList<Map<String, Triplet<Integer, String, String>>>> back) {
+
+		
+			return buildTreeRecursive(sentence, score, back, "ROOT", 0, sentence.size());
+		}
+
+		private Tree<String> buildTreeRecursive(List<String> sentence,
+												 ArrayList<ArrayList<Counter<String>>> score,
+												 ArrayList<ArrayList<Map<String, Triplet<Integer, String, String>>>> back,
+												 String label,
+												 int begin,
+												 int end) {
+
+			debugPrintln("BTR " + label + " " + begin + " " + end);
+	
+			ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
+			Triplet<Integer, String, String> path = back.get(begin).get(end).get(label);
+
+			if(back.get(begin).get(end).containsKey(label)) {
+				// the back tracing path contains the label we want					
+				if(path.getFirst() >= 0) {
+					// binary rule
+					children.add(buildTreeRecursive(sentence, score, back, path.getSecond(), begin, path.getFirst()));
+					children.add(buildTreeRecursive(sentence, score, back, path.getThird(), path.getFirst(), end));
+				} else {
+					// unary rule
+					children.add(buildTreeRecursive(sentence, score, back, path.getSecond(), begin, end));
+				}
+			} else {
+				children.add(new Tree<String>(sentence.get(begin)));
+			}
+
+			return new Tree<String>(label, children);
+
 		}
 
 	}
@@ -327,6 +483,31 @@ public class PCFGParserTester {
 		Map<String, List<UnaryRule>> unaryRulesByChild = 
 				new HashMap<String, List<UnaryRule>>();
 
+		Set<String> nonterminals = null;
+
+		/* Gets All Nonterminals */
+		public Set<String> getNonterminals() {
+			if(nonterminals != null) {
+				return nonterminals;
+			} else {
+				nonterminals = new HashSet<String>();
+				for(String leftChild : binaryRulesByLeftChild.keySet()) {
+					for(BinaryRule b : getBinaryRulesByLeftChild(leftChild)) {
+						nonterminals.add(b.getParent());
+						nonterminals.add(b.getLeftChild());
+						nonterminals.add(b.getRightChild());
+					}
+				}
+				for(String child : unaryRulesByChild.keySet())	{
+					for(UnaryRule u : getUnaryRulesByChild(child)) {
+						nonterminals.add(u.getParent());
+						nonterminals.add(child);
+					}
+				}
+				return nonterminals;
+			}
+		}
+
 		/* Rules in grammar are indexed by child for easy access when
 		 * doing bottom up parsing. */
 		public List<BinaryRule> getBinaryRulesByLeftChild(String leftChild) {
@@ -597,7 +778,7 @@ public class PCFGParserTester {
 		Map<String, String> options = new HashMap<String, String>();
 		options.put("-path",      "/afs/ir/class/cs224n/pa2/data/");
 		options.put("-data",      "miniTest");
-		options.put("-parser",    "cs224n.assignments.PCFGParserTester$BaselineParser");
+		options.put("-parser",    "cs224n.assignments.PCFGParserTester$PCFGParser");
 		options.put("-maxLength", "20");
 
 		// let command-line options supersede defaults .........................
