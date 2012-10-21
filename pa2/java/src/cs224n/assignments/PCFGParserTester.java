@@ -88,7 +88,7 @@ public class PCFGParserTester {
 			for(int i = 0; i < sentence.size(); i++) {
 				String word = sentence.get(i);
 				for (String tag : lexicon.getAllTags()) {
-					debugPrintln("(1) set " + i + ", " + (i + 1) + ", " + tag + " to " + lexicon.scoreTagging(word, tag));
+					//debugPrintln("(1) set " + i + ", " + (i + 1) + ", " + tag + " to " + lexicon.scoreTagging(word, tag));
 					score.get(i).get(i+1).setCount(tag, lexicon.scoreTagging(word, tag));
 				}
 
@@ -100,9 +100,9 @@ public class PCFGParserTester {
 						for(UnaryRule r : grammar.getUnaryRulesByChild(b)) {
 							double p = r.getScore() * score.get(i).get(i+1).getCount(b);
 							String a = r.getParent();
-							debugPrintln("Unary transition " + a + " -> " + b + " at " + i + " : " + p);
+							//debugPrintln("Unary transition " + a + " -> " + b + " at " + i + " : " + p);
 							if(p > score.get(i).get(i+1).getCount(a)) {
-								debugPrintln("(2) set " + i + ", " + (i + 1) + ", " + a + " to " + p);
+								//debugPrintln("(2) set " + i + ", " + (i + 1) + ", " + a + " to " + p);
 								score.get(i).get(i+1).setCount(a, p);
 								back.get(i).get(i+1).put(a, new Triplet<Integer, String, String>(-1, b, null));
 								added = true;
@@ -126,18 +126,18 @@ public class PCFGParserTester {
 										    score.get(split).get(end).getCount(c) *
 											r.getScore();
 
-								debugPrintln(begin + "->" + split + " (" + b + "):" + score.get(begin).get(split).getCount(b) + 
-									", " + split + "->" + end + " (" + c + "):" + score.get(split).get(end).getCount(c) +
-									", r:" + r.getScore());
-								debugPrintln("p:" + p + ", score:" + score.get(begin).get(end).getCount(a));
+								//debugPrintln(begin + "->" + split + " (" + b + "):" + score.get(begin).get(split).getCount(b) + 
+								//	", " + split + "->" + end + " (" + c + "):" + score.get(split).get(end).getCount(c) +
+								//	", r:" + r.getScore());
+								//debugPrintln("p:" + p + ", score:" + score.get(begin).get(end).getCount(a));
 
 								if(p > score.get(begin).get(end).getCount(a)) {
-									debugPrintln("(3) set " + begin + ", " + end + ", " + a + " to " + p);
+									//debugPrintln("(3) set " + begin + ", " + end + ", " + a + " to " + p);
 									score.get(begin).get(end).setCount(a, p);
 									back.get(begin).get(end).put(a, new Triplet<Integer, String, String>(split, b, c));
 								}
 
-								debugPrintln(" ");
+								//debugPrintln(" ");
 							}
 						}
 					}
@@ -154,9 +154,9 @@ public class PCFGParserTester {
 									score.get(begin).get(end).setCount(a, p);
 									back.get(begin).get(end).put(a, new Triplet<Integer, String, String>(-1, b, null));
 									added = true;
-									debugPrintln("(4) set " + begin + ", " + end + ", " + a + " to " + p);
+									//debugPrintln("(4) set " + begin + ", " + end + ", " + a + " to " + p);
 								}
-								debugPrintln(" ");
+								//debugPrintln(" ");
 							}
 						}
 					}
@@ -166,7 +166,7 @@ public class PCFGParserTester {
 			Tree<String> finalTree = TreeAnnotations.unAnnotateTree(buildTree(sentence, score, back));
 
 			long endTime = System.currentTimeMillis();
-			System.out.println("Parsing this tree took " + (endTime - startTime) + " milliseconds.");
+			System.out.println("Parsing this tree from sentence length " + sentence.size() + " took " + (endTime - startTime) + " milliseconds.");
 
 			return finalTree;
 		}
