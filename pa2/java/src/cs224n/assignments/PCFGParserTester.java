@@ -338,17 +338,24 @@ public class PCFGParserTester {
 	public static class TreeAnnotations {
 
 		public static Tree<String> annotateTree(Tree<String> unAnnotatedTree) {
+            Tree<String> parentAnnotatedTree = annotateParent(unAnnotatedTree, null);
 
-			// Currently, the only annotation done is a lossless binarization
+			return binarizeTree(parentAnnotatedTree);
 
-			// TODO: change the annotation from a lossless binarization to a
-			// finite-order markov process (try at least 1st and 2nd order)
-
-			// TODO : mark nodes with the label of their parent nodes, giving a second
-			// order vertical markov process
-
-			return binarizeTree(unAnnotatedTree);
-
+		}
+    
+		private static Tree<String> annotateParent(Tree<String> tree, String parentLabel) {
+          String transformedLabel = tree.getLabel();
+          if (tree.isPhrasal() && parentLabel != null)
+            transformedLabel += "^" + parentLabel;
+          if (tree.isLeaf()) {
+              return new Tree<String>(transformedLabel);
+          }
+          List<Tree<String>> transformedChildren = new ArrayList<Tree<String>>();
+          for (Tree<String> child : tree.getChildren()) {
+              transformedChildren.add(annotateParent(child, tree.getLabel()));
+          }
+          return new Tree<String>(transformedLabel, transformedChildren);
 		}
 
 		private static Tree<String> binarizeTree(Tree<String> tree) {

@@ -25,8 +25,11 @@ public class Trees {
 			String transformedLabel = tree.getLabel();
 			int cutIndex = transformedLabel.indexOf('-');
 			int cutIndex2 = transformedLabel.indexOf('=');
+            int cutIndex3 = transformedLabel.indexOf('^');
 			if (cutIndex2 > 0 && (cutIndex2 < cutIndex || cutIndex == -1))
 				cutIndex = cutIndex2;
+			if (cutIndex3 > 0 && (cutIndex3 < cutIndex || cutIndex == -1))
+				cutIndex = cutIndex3;
 			if (cutIndex > 0 && !tree.isLeaf()) {
 				transformedLabel = new String(transformedLabel.substring(0,
 						cutIndex));
