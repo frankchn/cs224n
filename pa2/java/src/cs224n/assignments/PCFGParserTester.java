@@ -186,7 +186,7 @@ public class PCFGParserTester {
 												 int begin,
 												 int end) {
 
-			debugPrintln("BTR " + label + " " + begin + " " + end);
+			//debugPrintln("BTR " + label + " " + begin + " " + end);
 	
 			ArrayList<Tree<String>> children = new ArrayList<Tree<String>>();
 			Triplet<Integer, String, String> path = back.get(begin).get(end).get(label);
