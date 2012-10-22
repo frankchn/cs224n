@@ -14,7 +14,7 @@ import java.util.Collection;
  * @author Dan Klein
  */
 public class Counter <E> implements Serializable {
-  Map<E, Double> entries;
+  protected Map<E, Double> entries;
 
   /**
    * The elements in the counter.

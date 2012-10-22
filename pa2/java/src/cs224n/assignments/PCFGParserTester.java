@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
  */
 public class PCFGParserTester {
 
+
 	// Parser interface ===========================================================
 
 	/**
@@ -32,6 +33,16 @@ public class PCFGParserTester {
 
 
 	// PCFGParser =================================================================
+    public static class CounterLog<E> extends Counter<E> {
+      @Override
+      public double getCount(E key) {
+        Double value = entries.get(key);
+        if (value == null)
+          return Double.NEGATIVE_INFINITY;
+        return value;
+      }
+    }
+
 
 	/**
 	 * The PCFG Parser you will implement.
@@ -78,7 +89,7 @@ public class PCFGParserTester {
 				score.add(i, new ArrayList<Counter<String>>());
 				back.add(i, new ArrayList<Map<String, Triplet<Integer, String, String>>>());
 				for(int j = 0; j <= sentence.size(); j++) {
-					score.get(i).add(j, new Counter<String>());
+					score.get(i).add(j, new CounterLog<String>());
 					back.get(i).add(j, new HashMap<String, Triplet<Integer, String, String>>());
 				}
 			}
@@ -89,7 +100,7 @@ public class PCFGParserTester {
 				String word = sentence.get(i);
 				for (String tag : lexicon.getAllTags()) {
 					//debugPrintln("(1) set " + i + ", " + (i + 1) + ", " + tag + " to " + lexicon.scoreTagging(word, tag));
-					score.get(i).get(i+1).setCount(tag, lexicon.scoreTagging(word, tag));
+					score.get(i).get(i+1).setCount(tag, Math.log(lexicon.scoreTagging(word, tag)));
 				}
 
 				// handle unaries
@@ -98,7 +109,7 @@ public class PCFGParserTester {
 					added = false;
 					for(String b : nonterminals) {
 						for(UnaryRule r : grammar.getUnaryRulesByChild(b)) {
-							double p = r.getScore() * score.get(i).get(i+1).getCount(b);
+							double p = Math.log(r.getScore()) + score.get(i).get(i+1).getCount(b);
 							String a = r.getParent();
 							//debugPrintln("Unary transition " + a + " -> " + b + " at " + i + " : " + p);
 							if(p > score.get(i).get(i+1).getCount(a)) {
@@ -122,9 +133,9 @@ public class PCFGParserTester {
 								String a = r.getParent();
 								String c = r.getRightChild();
 
-								double p = score.get(begin).get(split).getCount(b) *
-										    score.get(split).get(end).getCount(c) *
-											r.getScore();
+								double p = score.get(begin).get(split).getCount(b) +
+										    score.get(split).get(end).getCount(c) +
+											Math.log(r.getScore());
 
 								//debugPrintln(begin + "->" + split + " (" + b + "):" + score.get(begin).get(split).getCount(b) + 
 								//	", " + split + "->" + end + " (" + c + "):" + score.get(split).get(end).getCount(c) +
@@ -148,7 +159,7 @@ public class PCFGParserTester {
 						added = false;
 						for(String b : nonterminals) {
 							for(UnaryRule r : grammar.getUnaryRulesByChild(b)) {
-								double p = r.getScore() * score.get(begin).get(end).getCount(b);
+								double p = Math.log(r.getScore()) + score.get(begin).get(end).getCount(b);
 								String a = r.getParent();
 								if(p > score.get(begin).get(end).getCount(a)) {
 									score.get(begin).get(end).setCount(a, p);
