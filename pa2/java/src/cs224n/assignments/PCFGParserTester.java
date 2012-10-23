@@ -34,6 +34,10 @@ public class PCFGParserTester {
 
 	// PCFGParser =================================================================
     public static class CounterLog<E> extends Counter<E> {
+      public CounterLog(MapFactory<E, Double> mf) {
+        super(mf);
+      }
+
       @Override
       public double getCount(E key) {
         Double value = entries.get(key);
@@ -89,7 +93,7 @@ public class PCFGParserTester {
 				score.add(i, new ArrayList<Counter<String>>());
 				back.add(i, new ArrayList<Map<String, Triplet<Integer, String, String>>>());
 				for(int j = 0; j <= sentence.size(); j++) {
-					score.get(i).add(j, new CounterLog<String>());
+					score.get(i).add(j, new CounterLog<String>(new MapFactory.IdentityHashMapFactory<String, Double>()));
 					back.get(i).add(j, new HashMap<String, Triplet<Integer, String, String>>());
 				}
 			}
@@ -360,6 +364,8 @@ public class PCFGParserTester {
           String transformedLabel = tree.getLabel();
           if (tree.isPhrasal() && parentLabel != null)
             transformedLabel += "^" + parentLabel;
+          
+          transformedLabel = transformedLabel.intern();
           if (tree.isLeaf()) {
               return new Tree<String>(transformedLabel);
           }
@@ -409,6 +415,7 @@ public class PCFGParserTester {
             for (int i = Math.max(0, numChildrenGenerated-HORIZONTAL_MARKOV); i < numChildrenGenerated; i++)
               intermediateLabel += intermediateLabels.get(i);
             
+            intermediateLabel = intermediateLabel.intern();
 			return new Tree<String>(intermediateLabel, children);
 		} 
 
