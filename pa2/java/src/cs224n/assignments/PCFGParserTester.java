@@ -347,6 +347,7 @@ public class PCFGParserTester {
 	 * scoring.
 	 */
 	public static class TreeAnnotations {
+        public static final int HORIZONTAL_MARKOV = 2;
 
 		public static Tree<String> annotateTree(Tree<String> unAnnotatedTree) {
             Tree<String> parentAnnotatedTree = annotateParent(unAnnotatedTree, null);
@@ -382,22 +383,32 @@ public class PCFGParserTester {
 			// so decompose it into a sequence of binary and unary trees.
 			String intermediateLabel = "@"+label+"->";
 			Tree<String> intermediateTree =
-					binarizeTreeHelper(tree, 0, intermediateLabel);
+					binarizeTreeHelper(tree, 0, intermediateLabel, new ArrayList<String>());
 			return new Tree<String>(label, intermediateTree.getChildren());
 		}
 
 		private static Tree<String> binarizeTreeHelper(Tree<String> tree,
 				int numChildrenGenerated, 
-				String intermediateLabel) {
+				String intermediateLabelRoot,
+				List<String> intermediateLabels) {
 			Tree<String> leftTree = tree.getChildren().get(numChildrenGenerated);
 			List<Tree<String>> children = new ArrayList<Tree<String>>();
 			children.add(binarizeTree(leftTree));
 			if (numChildrenGenerated < tree.getChildren().size() - 1) {
+                intermediateLabels.add("_" + leftTree.getLabel());
+                
 				Tree<String> rightTree = 
 						binarizeTreeHelper(tree, numChildrenGenerated + 1, 
-								intermediateLabel + "_" + leftTree.getLabel());
+								intermediateLabelRoot,
+								intermediateLabels);
 				children.add(rightTree);
 			}
+      
+			String intermediateLabel = intermediateLabelRoot;
+            
+            for (int i = Math.max(0, numChildrenGenerated-HORIZONTAL_MARKOV); i < numChildrenGenerated; i++)
+              intermediateLabel += intermediateLabels.get(i);
+            
 			return new Tree<String>(intermediateLabel, children);
 		} 
 
