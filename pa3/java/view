@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+
+DATA_DIR=/afs/ir/class/cs224n/pa3/data
+
+# -- Variables
+#(parse command line)
+doc=$1
+if [ "$doc" = "" ]; then
+	echo "usage: `basename $0` [doc_name|doc_index]"
+	exit 1
+fi
+#(number or filepath)
+isNumber=""
+case $doc in
+	''|*[!0-9]*) ;;
+	*) isNumber=true ;;
+esac
+
+# -- Find Document
+#(find document)
+if [ $isNumber ]; then
+	file=`find "$DATA_DIR/conll2011.train.ser/" -name "*.dat" |\
+		sort |\
+		sed -n "$doc"p`
+else
+	#(look in train)
+	files=`find "$DATA_DIR/conll2011.train.ser/" -regex ".*$doc.*.dat"`
+	for f in $files; do
+		if [ $file ]; then
+			echo "Multiple matching files: '$file' and '$f'"
+			exit 1
+		fi
+		file="$f"
+	done
+	#(look in dev)
+	if [ "$file" = "" ]; then
+		files=`find "$DATA_DIR/conll2011.dev.ser/" -regex ".*$doc.*.dat"`
+		for f in $files; do
+			if [ $file ]; then
+				echo "Multiple matching files: '$file' and '$f'"
+				exit 1
+			fi
+			file="$f"
+		done
+	fi
+fi
+#(error check)
+if [ "$file" = "" ]; then
+	echo "Could not find document: $doc"
+	exit 1
+fi
+
+# -- Render Document
+echo "--------------------------------------------------------------------------------"
+echo "$file"
+echo "--------------------------------------------------------------------------------"
+while read line; do
+	if [ "$line" = '(end gloss)' ]; then
+		exit 1
+	elif [ "$line" = "---------gloss--------" ]; then
+		donothing=true
+	else
+		echo "$line"
+	fi
+done < $file

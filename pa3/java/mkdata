@@ -1,0 +1,16 @@
+#!/bin/sh
+
+export PATH=/usr/pubsw/bin:$PATH
+
+run() {
+	TYPE="$1"
+	java -server -mx7g -cp classes:etc/stanford-corenlp-2011-09-16.jar:etc/xom.jar:etc/joda-time.jar:../data/stanford-corenlp-2011-09-14-models.jar \
+	  staff.coref.CoNLLCacher \
+		-data "$TYPE" \
+		-documents 100 \
+		-raw
+}
+
+run "train"
+run "dev"
+run "test"
