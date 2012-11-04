@@ -8,21 +8,9 @@ import cs224n.util.Pair;
 
 import java.util.ArrayList;
 import java.util.*;
-
-/**
- * A simple exact-match coreference system.
- *
- * Note that the train() method doesn't actually do anything, since it is a
- * deterministic system; instead, it contains a skeleton for code which *does* do
- * useful training.
- *
- * @author Gabor Angeli (angeli at cs.stanford)
- */
+ 
 public class BaselineCoreferenceSystem implements CoreferenceSystem{
-  /**
-   * Since this is a deterministic system, the train() method does nothing
-   * @param trainingData The data to train off of
-   */
+
   public void train(Collection<Pair<Document, List<Entity>>> trainingData) {
     for(Pair<Document, List<Entity>> pair : trainingData){
       //--Get Variables
