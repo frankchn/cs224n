@@ -32,6 +32,6 @@ public class ClusteredMention {
   public int hashCode(){ return mention.hashCode() ^ entity.hashCode(); }
   @Override
   public String toString(){
-    return entity.toString() + " in " + entity.toString();
+    return mention.toString() + " in " + entity.toString();
   }
 }
