@@ -14,133 +14,105 @@ java -Xmx500m -cp "extlib/*:classes" cs224n.assignments.CoreferenceTester \
 
 public class RuleBased implements CoreferenceSystem {
 
-	private Map<Mention, Entity> globalMentions = new HashMap<Mention, Entity>();
-
-	/* Strict String Matching as a first pass */
-	private void StrictStringMatch(Document doc) {
-		
-		Map<String,Entity> clusters = new HashMap<String,Entity>();
-		Counter<String> counts = new Counter<String>();
-
-		for(Mention m : doc.getMentions())
-			counts.incrementCount(m.gloss(), 1);
-
-		for(Mention m : doc.getMentions()) {
-			if(Pronoun.isSomePronoun(m.gloss())) continue;
-			if(counts.getCount(m.gloss()) > 1) {
-				// this is for when we first see it. the next time we see it, we mark as coreferent
-				if(!clusters.containsKey(m.gloss())) clusters.put(m.gloss(), m.markSingleton().entity);
-				globalMentions.put(m, m.markCoreferent(clusters.get(m.gloss())).entity);
-			}
-		}
-
-	}
-
-	/* Try to match Head Words while filtering pronouns */
-	private void MatchHeadWords(Document doc) {
-		for(Mention m : doc.getMentions()) {
-			if(globalMentions.containsKey(m)) continue;
-			if(Pronoun.isSomePronoun(m.gloss())) continue;
-			for(Mention n : doc.getMentions()) {
-				if(m == n) continue;
-				String mHead = m.headWord().toLowerCase();
-				String nHead = n.headWord().toLowerCase();
-				if(mHead.equals(nHead)) {
-					if(!globalMentions.containsKey(n))
-						globalMentions.put(n, n.markSingleton().entity);
-
-					globalMentions.put(m, m.markCoreferent(globalMentions.get(n)).entity);
-					break;
-				}
-			}
-		}
-	}
-
-	private void NounPronounMatch(Document doc) {
-		for(Mention m : doc.getMentions()) {
-			if(globalMentions.containsKey(m)) continue;
-			Pronoun p_m = Pronoun.valueOrNull(m.gloss()); // pronoun
-			if(!Pronoun.isSomePronoun(m.gloss()) || p_m == null) continue;
-
-			for(Mention n : doc.getMentions()) {
-				if(Pronoun.isSomePronoun(n.gloss())) continue;
-				Token curNoun = n.headToken();
-
-				if(!Name.gender(curNoun.word()).isCompatible(p_m.gender)) continue;
-				if(doc.indexOfSentence(m.sentence) - doc.indexOfSentence(n.sentence) < 0 ||
-				   doc.indexOfSentence(m.sentence) - doc.indexOfSentence(n.sentence) > 1) continue;
-
-				if(curNoun.isPluralNoun()) {
-					if(p_m.plural) continue;
-				} else {
-					if(!p_m.plural) continue;
-				}
-
-				if(!globalMentions.containsKey(n))
-					globalMentions.put(n, n.markSingleton().entity);
-
-
-				globalMentions.put(m, m.markCoreferent(globalMentions.get(n)).entity);
-				break;
-			}
-		}
-	}
-
-	private void MatchStrictPronouns(Document doc) {
-		for(Mention m : doc.getMentions()) {
-			if(globalMentions.containsKey(m)) continue;
-			Pronoun p_m = Pronoun.valueOrNull(m.gloss());
-			if(!Pronoun.isSomePronoun(m.gloss()) || p_m == null) continue;
-			
-			for(Mention n : doc.getMentions()) {
-				Pronoun p_n = Pronoun.valueOrNull(m.gloss());
-				if(!Pronoun.isSomePronoun(n.gloss()) || p_n == null) continue;
-
-				if(p_m == p_n) {
-					if(!globalMentions.containsKey(n))
-						globalMentions.put(n, n.markSingleton().entity);
-
-					globalMentions.put(m, m.markCoreferent(globalMentions.get(n)).entity);
-					break;
-				}
-			}
-		}
-	}
-
-	
-
 	@Override
 	public void train(Collection<Pair<Document, List<Entity>>> trainingData) {
-		// We are not going to train anything since this is rule-based
-		return;
+
+	}
+
+	private void mergeSets(Set<Mention> a, Set<Mention> b) {
+		a.addAll(b);
+		b.removeAll(b);
+	}
+
+	private void ExactStringTest(Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = false;
+		for(Mention m : a) {
+			for(Mention n : b) {
+				if(Pronoun.isSomePronoun(m.gloss())) continue;
+				if(Pronoun.isSomePronoun(n.gloss())) continue;
+				if(m.gloss().equalsIgnoreCase(n.gloss())) { shouldMerge = true; break; }
+			}
+		}
+		if(shouldMerge) mergeSets(a, b);
+	}
+
+	private boolean sameAttributes(Mention m, Mention n) {
+		Pair<Boolean, Boolean> gender = Util.haveGenderAndAreSameGender(m, n);
+		if(gender.getFirst() && !gender.getSecond()) return false;
+
+		Pair<Boolean, Boolean> number = Util.haveNumberAndAreSameNumber(m, n);
+		if(number.getFirst() && !number.getSecond()) return false;
+
+		if(!m.headToken().nerTag().equals(n.headToken().nerTag()) && 
+		   !m.headToken().nerTag().equals("O") &&
+		   !n.headToken().nerTag().equals("O")) return false;
+
+		return true;
+	}
+
+	// Doesn't work!
+	private void ExactPronounPronounTest(Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = true;
+		for(Mention m : a) {
+			for(Mention n : b) {
+				Pronoun p_m = Pronoun.valueOrNull(m.gloss());
+				Pronoun p_n = Pronoun.valueOrNull(m.gloss());
+				if(p_m == null || p_n == null) continue;
+				
+				if(!sameAttributes(m, n)) shouldMerge = false;
+
+				if(!shouldMerge) break;
+			}
+			if(!shouldMerge) break;
+		}
+		if(shouldMerge) mergeSets(a, b);
+	}
+
+	private void HeadWordTest(Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = false;
+		for(Mention m : a) {
+			for(Mention n : b) {
+				if(Pronoun.isSomePronoun(m.gloss())) continue;
+				if(Pronoun.isSomePronoun(n.gloss())) continue;
+				if(m.headWord().equalsIgnoreCase(n.headWord()) && sameAttributes(m, n)) { shouldMerge = true; break; }
+			}
+		}
+		if(shouldMerge) mergeSets(a, b);
 	}
 
 	@Override
 	public List<ClusteredMention> runCoreference(Document doc) {
-
 		List<ClusteredMention> mentions = new ArrayList<ClusteredMention>();
+		Set<Set<Mention>> clusters = new HashSet<Set<Mention>>();
 
-		int coreferent = 0;
-		int singleton = 0;
+		for(Mention m : doc.getMentions())
+			clusters.add(new HashSet<Mention>(Arrays.asList(new Mention[] { m })));
 
-		StrictStringMatch(doc);
-		NounPronounMatch(doc);
-		MatchStrictPronouns(doc);
-		MatchHeadWords(doc);
-
-		for(Mention m : doc.getMentions()) {
-			if(globalMentions.containsKey(m)) {
-				mentions.add(m.markCoreferent(globalMentions.get(m)));
-				coreferent++;
-			} else {
-				mentions.add(m.markSingleton());
-				singleton++;
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				ExactStringTest(a, b);
 			}
 		}
 
-		System.out.println("Coreferent: " + coreferent + 
-                           ", Singleton: " + singleton + 
-                           ", Total: " + (coreferent + singleton));
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				HeadWordTest(a, b);
+			}
+		}
+
+		for(Set<Mention> a : clusters) {
+			ClusteredMention c = null;
+			for(Mention m : a) {
+				if(c != null) 
+					mentions.add(m.markCoreferent(c));
+				else {
+					c = m.markSingleton();
+					mentions.add(c);
+				}
+			}
+		}
 
 		return mentions;
 	}
