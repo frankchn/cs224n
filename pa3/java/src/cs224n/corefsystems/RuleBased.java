@@ -80,6 +80,17 @@ public class RuleBased implements CoreferenceSystem {
 		if(shouldMerge) mergeSets(a, b);
 	}
 
+	private void InclusionTest(Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = false;
+		for(Mention m : a) {
+			for(Mention n : b) {
+				if(n.gloss().length() < 6) continue;
+				if(m.gloss().indexOf(n.gloss()) != -1 && sameAttributes(m, n)) { shouldMerge = true; break; }
+			}
+		}
+		if(shouldMerge) mergeSets(a, b);
+	}
+
 	@Override
 	public List<ClusteredMention> runCoreference(Document doc) {
 		List<ClusteredMention> mentions = new ArrayList<ClusteredMention>();
@@ -99,6 +110,13 @@ public class RuleBased implements CoreferenceSystem {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
 				HeadWordTest(a, b);
+			}
+		}
+
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				InclusionTest(a, b);
 			}
 		}
 
