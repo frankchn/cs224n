@@ -13,6 +13,7 @@ import edu.stanford.nlp.util.logging.StanfordRedwoodConfiguration;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.locks.Condition;
 
 import static edu.stanford.nlp.util.logging.Redwood.Util.*;
 
@@ -33,7 +34,32 @@ public class ClassifierBased implements CoreferenceSystem {
 			 * TODO: Create a set of active features
 			 */
 
-			Feature.ExactMatch.class,
+			Feature.HeadWordMatch.class,
+            //Pair.make(Feature.HasPronoun.class, Feature.HeadWordMatch.class),
+            Pair.make(Feature.HasPronoun.class, Feature.NumberAgreement.class),
+            Pair.make(Feature.HasPronoun.class, Feature.GenderAgreement.class),
+            Feature.GenderAgreement.class,
+            Feature.NumberAgreement.class,
+            Feature.PossessivePronounI.class,
+            Feature.PossessivePronounJ.class,
+            Feature.ReflexivePronounI.class,
+            Feature.ReflexivePronounJ.class,
+            //Pair.make(Feature.GenderAgreement.class, Feature.NumberAgreement.class),
+            //Feature.PronounJ.class,
+            //Pair.make(Feature.HasPronoun.class, Feature.HeadWordMatch.class),
+            //Pair.make(Feature.PronounI.class, Feature.PronounJ.class),
+            //Pair.make(Feature.SentenceDistance.class, Feature.PronounI.class),
+            //Pair.make(Feature.ProperNounJ.class, Feature.PronounI.class),
+            //Pair.make(Feature.NERCandidate.class, Feature.PronounI.class),
+            //Feature.NERAgreement.class,
+            //Pair.make(Feature.HasPronoun.class, Feature.NumberAgreement.class),
+            //Pair.make(Feature.HasPronoun.class, Feature.StrictGenderMatch.class),
+            //Feature.SentenceDistance.class,
+            //Feature.PronounI.class,
+            //Feature.PronounJ.class,
+            //Feature.ProperNounI.class,
+            //Feature.ProperNounJ.class,
+            //Feature.StrictGenderMatch.class,
 
 			//skeleton for how to create a pair feature
 			//Pair.make(Feature.IsFeature1.class, Feature.IsFeature2.class),
@@ -54,16 +80,98 @@ public class ClassifierBased implements CoreferenceSystem {
 			Mention onPrix = input.getFirst(); //the first mention (referred to as m_i in the handout)
 			Mention candidate = input.getSecond().mention; //the second mention (referred to as m_j in the handout)
 			Entity candidateCluster = input.getSecond().entity; //the cluster containing the second mention
-
-
+      
 			//--Features
 			if(clazz.equals(Feature.ExactMatch.class)){
 				//(exact string match)
 				return new Feature.ExactMatch(onPrix.gloss().equals(candidate.gloss()));
-//			} else if(clazz.equals(Feature.NewFeature.class) {
-				/*
-				 * TODO: Add features to return for specific classes. Implement calculating values of features here.
-				 */
+			}
+			else if (clazz.equals(Feature.HeadWordMatch.class)) {
+                return new Feature.HeadWordMatch(onPrix.headWord().equals(candidate.headWord()));
+			}
+			else if (clazz.equals(Feature.StrictGenderMatch.class)) {
+			    Pair<Boolean, Boolean> genderMatch = Util.haveGenderAndAreSameGender(onPrix, candidate);
+			    return new Feature.StrictGenderMatch(genderMatch.getFirst() && genderMatch.getSecond());
+			}
+			else if (clazz.equals(Feature.HasPronoun.class)) {
+                return new Feature.HasPronoun(Pronoun.isSomePronoun(onPrix.headWord()) || Pronoun.isSomePronoun(candidate.headWord()));
+			}
+			else if (clazz.equals(Feature.BothProperNoun.class)) {
+			    return new Feature.BothProperNoun(onPrix.headToken().isProperNoun() && candidate.headToken().isProperNoun());
+			}
+			else if (clazz.equals(Feature.PronounI.class)) {
+                return new Feature.PronounI(Pronoun.isSomePronoun(onPrix.headWord()));
+			}
+			else if (clazz.equals(Feature.PronounJ.class)) {
+                return new Feature.PronounJ(Pronoun.isSomePronoun(candidate.headWord()));
+			}
+			else if (clazz.equals(Feature.ProperNounI.class)) {
+                return new Feature.ProperNounI(onPrix.headToken().isProperNoun());
+			}
+			else if (clazz.equals(Feature.ProperNounJ.class)) {
+                return new Feature.ProperNounJ(candidate.headToken().isProperNoun());
+			}
+			else if (clazz.equals(Feature.PossessivePronounI.class)) {
+                Pronoun pn = Pronoun.valueOrNull(onPrix.headWord());
+                
+                if (pn != null && (pn.type == Pronoun.Type.POSESSIVE_DETERMINER || pn.type == Pronoun.Type.POSESSIVE_PRONOUN))
+                    return new Feature.PossessivePronounI(true);
+                
+                  return new Feature.PossessivePronounI(false);
+			}
+			else if (clazz.equals(Feature.PossessivePronounJ.class)) {
+                Pronoun pn = Pronoun.valueOrNull(candidate.headWord());
+                
+                if (pn != null && (pn.type == Pronoun.Type.POSESSIVE_DETERMINER || pn.type == Pronoun.Type.POSESSIVE_PRONOUN))
+                    return new Feature.PossessivePronounJ(true);
+                
+                  return new Feature.PossessivePronounJ(false);
+			}
+			else if (clazz.equals(Feature.ReflexivePronounI.class)) {
+                Pronoun pn = Pronoun.valueOrNull(onPrix.headWord());
+                
+                if (pn != null && pn.type == Pronoun.Type.REFLEXIVE)
+                    return new Feature.ReflexivePronounI(true);
+                
+                  return new Feature.ReflexivePronounI(false);
+			}
+			else if (clazz.equals(Feature.ReflexivePronounJ.class)) {
+                Pronoun pn = Pronoun.valueOrNull(candidate.headWord());
+                
+                if (pn != null && pn.type == Pronoun.Type.REFLEXIVE)
+                    return new Feature.ReflexivePronounJ(true);
+                
+                  return new Feature.ReflexivePronounJ(false);
+			}
+			else if (clazz.equals(Feature.SentenceDistance.class)) {
+                int onPrixIndex = onPrix.doc.indexOfSentence(onPrix.sentence);
+                int candidateIndex = candidate.doc.indexOfSentence(candidate.sentence);
+                
+                return new Feature.SentenceDistance(onPrixIndex - candidateIndex);
+			}
+			else if (clazz.equals(Feature.NumberAgreement.class)) {
+			    Pair<Boolean, Boolean> numberAgreement = Util.haveNumberAndAreSameNumber(onPrix, candidate);
+              
+			    return new Feature.NumberAgreement(numberAgreement.getFirst() && numberAgreement.getSecond());
+			}
+			else if (clazz.equals(Feature.NERAgreement.class)) {
+                String headNER = onPrix.headToken().nerTag();
+                String candidateNER = candidate.headToken().nerTag();
+                //return new Feature.NERAgreement(headNER.equals("O") || candidateNER.equals("O") ||
+                //    (headNER.equals(candidateNER)));
+                return new Feature.NERAgreement((headNER.equals(candidateNER)));
+			}
+			else if (clazz.equals(Feature.NERCandidate.class)) {
+                return new Feature.NERCandidate(candidate.headToken().nerTag());
+			}
+			else if (clazz.equals(Feature.GenderAgreement.class)) {
+			    Pair<Boolean, Boolean> genderMatch = Util.haveGenderAndAreSameGender(onPrix, candidate);
+                int retval = 0;
+                
+                if (genderMatch.getFirst())
+                    retval = genderMatch.getSecond() ? 1 : -1;
+                
+                return new Feature.GenderAgreement(retval);
 			}
 			else {
 				throw new IllegalArgumentException("Unregistered feature: " + clazz);
@@ -160,7 +268,7 @@ public class ClassifierBased implements CoreferenceSystem {
 			Feature feature = featureInfo.first();
 			Boolean label = featureInfo.second();
 			Double magnitude = featureInfo.third();
-			//log(FORCE,new DecimalFormat("0.000").format(magnitude) + " [" + label + "] " + feature);
+			log(FORCE,new DecimalFormat("0.000").format(magnitude) + " [" + label + "] " + feature);
 		}
 		end_Track("Features");
 		endTrack("Training");

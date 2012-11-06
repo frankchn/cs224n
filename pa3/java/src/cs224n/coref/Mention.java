@@ -98,6 +98,21 @@ public class Mention implements Serializable, Decodable {
     if(words.size() > 0){ b.append(words.get(words.size()-1)); }
     return b.toString();
   }
+  
+  
+  /**
+   * Returns string reproduction, up until headword
+   */
+  public String textTillHeadword(){
+    StringBuilder b = new StringBuilder();
+    List<String> words = text();
+    int length = Math.min(headWordIndex, words.size());
+    for(int i=0; i<length-1; i++){
+      b.append(words.get(i)).append(" ");
+    }
+    if(length > 0){ b.append(words.get(length-1)); }
+    return b.toString();
+  }
 
   /**
    * The length, in tokens, of this mention

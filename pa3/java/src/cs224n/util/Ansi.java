@@ -8,7 +8,7 @@ public class Ansi {
   public static final String[] colors =  {"\033[31m", "\033[32m", "\033[33m", "\033[34m", "\033[35m", "\033[36m"};
   public static final String[] styles = {"", "\033[1m", "\033[3m", "\033[4m"};
   public static final String endFormatting = "\033[0m";
-  private static boolean forceAnsi = false;
+  private static boolean forceAnsi = true;
 
   public static boolean supportsAnsi(){
     if(forceAnsi){ return true; }

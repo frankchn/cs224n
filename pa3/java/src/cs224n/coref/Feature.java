@@ -101,6 +101,74 @@ public interface Feature {
     public ExactMatch(boolean exactMatch){ super(exactMatch); }
   }
   
+  public static class HeadWordMatch extends Indicator {
+    public HeadWordMatch(boolean match){ super(match); }
+  }
+  
+  public static class StrictGenderMatch extends Indicator {
+    public StrictGenderMatch(boolean strictGenderMatch){ super(strictGenderMatch); }
+  }
+  
+  public static class PronounI extends Indicator {
+    public PronounI(boolean pronounI){ super(pronounI); }
+  }
+  
+  public static class PronounJ extends Indicator {
+    public PronounJ(boolean pronounJ){ super(pronounJ); }
+  }
+  
+  public static class ProperNounI extends Indicator {
+    public ProperNounI(boolean properNounI){ super(properNounI); }
+  }
+  
+  public static class ProperNounJ extends Indicator {
+    public ProperNounJ(boolean properNounJ){ super(properNounJ); }
+  }
+  
+  public static class PossessivePronounI extends Indicator {
+    public PossessivePronounI(boolean possessive){ super(possessive); }
+  }
+  
+  public static class PossessivePronounJ extends Indicator {
+    public PossessivePronounJ(boolean possessive){ super(possessive); }
+  }
+  
+  public static class ReflexivePronounI extends Indicator {
+    public ReflexivePronounI(boolean reflexive){ super(reflexive); }
+  }
+  
+  public static class ReflexivePronounJ extends Indicator {
+    public ReflexivePronounJ(boolean reflexive){ super(reflexive); }
+  }
+  
+  public static class SentenceDistance extends IntIndicator {
+    public SentenceDistance(int distance){ super(distance); }
+  }
+  
+  public static class NumberAgreement extends Indicator {
+    public NumberAgreement(boolean agree){ super(agree); }
+  }
+  
+  public static class NERAgreement extends Indicator {
+    public NERAgreement(boolean agree){ super(agree); }
+  }
+  
+  public static class NERCandidate extends StringIndicator {
+    public NERCandidate(String type){ super(type); }
+  }
+  
+  public static class GenderAgreement extends IntIndicator {
+    public GenderAgreement(int agree){ super(agree); }
+  }
+  
+  public static class BothProperNoun extends Indicator {
+    public BothProperNoun(boolean has){ super(has); }
+  }
+  
+  public static class HasPronoun extends Indicator {
+    public HasPronoun(boolean has){ super(has); }
+  }
+  
   /*
    * TODO: Add values to the indicators here.
    */
