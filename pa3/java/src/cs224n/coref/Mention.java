@@ -107,6 +107,10 @@ public class Mention implements Serializable, Decodable {
     return endIndexExclusive - beginIndexInclusive;
   }
 
+  public Entity corefferentWith() {
+    return corefferentWith;
+  }
+
   /**
    * Mark this mention as referring to an entity.
    * @param cluster The entity to refer to

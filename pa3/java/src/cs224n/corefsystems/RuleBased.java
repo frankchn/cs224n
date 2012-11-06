@@ -2,6 +2,7 @@ package cs224n.corefsystems;
 
 import java.util.*;
 import cs224n.coref.*;
+import cs224n.coref.Sentence.*;
 import cs224n.ling.*;
 import cs224n.util.*;
 
@@ -13,82 +14,100 @@ java -Xmx500m -cp "extlib/*:classes" cs224n.assignments.CoreferenceTester \
 
 public class RuleBased implements CoreferenceSystem {
 
-	private HashMap<Mention, Entity> globalMentions = new HashMap<Mention, Entity>();
+	private Map<Mention, Entity> globalMentions = new HashMap<Mention, Entity>();
 
-	private void StrictStringEquivalence(Document doc) {
-		List<Mention> ms = doc.getMentions();
-		Map<String, Entity> clusters = new HashMap<String, Entity>();
+	/* Strict String Matching as a first pass */
+	private void StrictStringMatch(Document doc) {
+		
+		Map<String,Entity> clusters = new HashMap<String,Entity>();
+		Counter<String> counts = new Counter<String>();
 
-		for(int i = 0; i < ms.size(); i++) {
-			if(globalMentions.containsKey(ms.get(i))) continue;
+		for(Mention m : doc.getMentions())
+			counts.incrementCount(m.gloss(), 1);
 
-			for(int j = 0; j < ms.size(); j++) {
-				if(i == j) continue;
-				if(Pronoun.isSomePronoun(ms.get(i).gloss())) continue;
-				if(Pronoun.isSomePronoun(ms.get(j).gloss())) continue;
+		for(Mention m : doc.getMentions()) {
+			if(Pronoun.isSomePronoun(m.gloss())) continue;
+			if(counts.getCount(m.gloss()) > 1) {
+				// this is for when we first see it. the next time we see it, we mark as coreferent
+				if(!clusters.containsKey(m.gloss())) clusters.put(m.gloss(), m.markSingleton().entity);
+				globalMentions.put(m, m.markCoreferent(clusters.get(m.gloss())).entity);
+			}
+		}
 
-				if(ms.get(i).gloss().equals(ms.get(j).gloss())) {
-					if(!clusters.containsKey(ms.get(i).gloss())) {
-						clusters.put(ms.get(i).gloss(), ms.get(i).markSingleton().entity);
-					}
+	}
 
-					if(!globalMentions.containsKey(ms.get(i)))
-						globalMentions.put(ms.get(i), clusters.get(ms.get(i).gloss()));
+	/* Try to match Head Words while filtering pronouns */
+	private void MatchHeadWords(Document doc) {
+		for(Mention m : doc.getMentions()) {
+			if(globalMentions.containsKey(m)) continue;
+			if(Pronoun.isSomePronoun(m.gloss())) continue;
+			for(Mention n : doc.getMentions()) {
+				if(m == n) continue;
+				String mHead = m.headWord().toLowerCase();
+				String nHead = n.headWord().toLowerCase();
+				if(mHead.equals(nHead)) {
+					if(!globalMentions.containsKey(n))
+						globalMentions.put(n, n.markSingleton().entity);
+
+					globalMentions.put(m, m.markCoreferent(globalMentions.get(n)).entity);
+					break;
 				}
 			}
 		}
 	}
 
-	private void PronounPronounEquivalence(Document doc) {
-		List<Mention> ms = doc.getMentions();
-		Map<String, Entity> clusters = new HashMap<String, Entity>();
+	private void NounPronounMatch(Document doc) {
+		for(Mention m : doc.getMentions()) {
+			if(globalMentions.containsKey(m)) continue;
+			Pronoun p_m = Pronoun.valueOrNull(m.gloss()); // pronoun
+			if(!Pronoun.isSomePronoun(m.gloss()) || p_m == null) continue;
 
-		for(int i = 0; i < ms.size(); i++) {
-			if(globalMentions.containsKey(ms.get(i))) continue;
+			for(Mention n : doc.getMentions()) {
+				if(Pronoun.isSomePronoun(n.gloss())) continue;
+				Token curNoun = n.headToken();
 
-			for(int j = 0; j < ms.size(); j++) {
-				if(i == j) continue;
-				if(!Pronoun.isSomePronoun(ms.get(i).gloss())) continue;
-				if(!Pronoun.isSomePronoun(ms.get(j).gloss())) continue;
+				if(!Name.gender(curNoun.word()).isCompatible(p_m.gender)) continue;
+				if(doc.indexOfSentence(m.sentence) - doc.indexOfSentence(n.sentence) < 0 ||
+				   doc.indexOfSentence(m.sentence) - doc.indexOfSentence(n.sentence) > 1) continue;
 
-				Pronoun p = Pronoun.valueOrNull(ms.get(i).gloss());
-				Pronoun q = Pronoun.valueOrNull(ms.get(j).gloss());
+				if(curNoun.isPluralNoun()) {
+					if(p_m.plural) continue;
+				} else {
+					if(!p_m.plural) continue;
+				}
 
-				if(p != null && q != null && p == q) {
-					if(!clusters.containsKey(ms.get(i).gloss())) {
-						clusters.put(ms.get(i).gloss(), ms.get(i).markSingleton().entity);
-					}
+				if(!globalMentions.containsKey(n))
+					globalMentions.put(n, n.markSingleton().entity);
 
-					if(!globalMentions.containsKey(ms.get(i)))
-						globalMentions.put(ms.get(i), clusters.get(ms.get(i).gloss()));
+
+				globalMentions.put(m, m.markCoreferent(globalMentions.get(n)).entity);
+				break;
+			}
+		}
+	}
+
+	private void MatchStrictPronouns(Document doc) {
+		for(Mention m : doc.getMentions()) {
+			if(globalMentions.containsKey(m)) continue;
+			Pronoun p_m = Pronoun.valueOrNull(m.gloss());
+			if(!Pronoun.isSomePronoun(m.gloss()) || p_m == null) continue;
+			
+			for(Mention n : doc.getMentions()) {
+				Pronoun p_n = Pronoun.valueOrNull(m.gloss());
+				if(!Pronoun.isSomePronoun(n.gloss()) || p_n == null) continue;
+
+				if(p_m == p_n) {
+					if(!globalMentions.containsKey(n))
+						globalMentions.put(n, n.markSingleton().entity);
+
+					globalMentions.put(m, m.markCoreferent(globalMentions.get(n)).entity);
+					break;
 				}
 			}
 		}
 	}
 
-	private void GenderedNamePronounEquivalence(Document doc) {
-		List<Mention> ms = doc.getMentions();
-		Map<String, Entity> clusters = new HashMap<String, Entity>();
-
-		for(int i = 0; i < ms.size(); i++) {
-			if(globalMentions.containsKey(ms.get(i))) continue;
-
-			for(int j = 0; j < ms.size(); j++) {
-				if(i == j) continue;
-				if(!Pronoun.isSomePronoun(ms.get(i).gloss())) continue;
-				Pronoun p = Pronoun.valueOrNull(ms.get(i).gloss());
-
-				if(p != null && p.gender == Name.gender(ms.get(i).gloss())) {
-					if(!clusters.containsKey(ms.get(i).gloss())) {
-						clusters.put(ms.get(i).gloss(), ms.get(i).markSingleton().entity);
-					}
-
-					if(!globalMentions.containsKey(ms.get(i)))
-						globalMentions.put(ms.get(i), clusters.get(ms.get(i).gloss()));
-				}
-			}
-		}
-	}
+	
 
 	@Override
 	public void train(Collection<Pair<Document, List<Entity>>> trainingData) {
@@ -104,10 +123,10 @@ public class RuleBased implements CoreferenceSystem {
 		int coreferent = 0;
 		int singleton = 0;
 
-		StrictStringEquivalence(doc);
-		PronounPronounEquivalence(doc);
-
-		GenderedNamePronounEquivalence(doc);
+		StrictStringMatch(doc);
+		NounPronounMatch(doc);
+		MatchStrictPronouns(doc);
+		MatchHeadWords(doc);
 
 		for(Mention m : doc.getMentions()) {
 			if(globalMentions.containsKey(m)) {
