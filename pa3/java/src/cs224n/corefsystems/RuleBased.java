@@ -14,9 +14,32 @@ java -Xmx500m -cp "extlib/*:classes" cs224n.assignments.CoreferenceTester \
 
 public class RuleBased implements CoreferenceSystem {
 
+	HashMap<String, HashSet<String>> commonCo = new HashMap<String, HashSet<String>>();
+
 	@Override
 	public void train(Collection<Pair<Document, List<Entity>>> trainingData) {
+		for(Pair<Document, List<Entity>> pair : trainingData){
+			//--Get Variables
+			Document doc = pair.getFirst();
+			List<Entity> clusters = pair.getSecond();
+			List<Mention> mentions = doc.getMentions();
 
+			//--Iterate Over Coreferent Mention Pairs
+			for(Entity e : clusters){
+				for(Pair<Mention, Mention> mentionPair : e.orderedMentionPairs()){
+					String first = mentionPair.getFirst().headWord();
+					String second = mentionPair.getSecond().headWord();
+
+					if(!commonCo.containsKey(first))
+						commonCo.put(first, new HashSet<String>());
+					if(!commonCo.containsKey(second))
+						commonCo.put(second, new HashSet<String>());
+
+					commonCo.get(first).add(second);
+					commonCo.get(second).add(first);
+				}
+			}
+		}
 	}
 
 	private void mergeSets(Set<Mention> a, Set<Mention> b) {
@@ -36,7 +59,20 @@ public class RuleBased implements CoreferenceSystem {
 		return false;
 	}
 
-	private void SpeakerTest(Set<Mention> a, Set<Mention> b) {
+	private boolean BaselineCoreferenceTest(Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = false;
+
+		for(Mention m : a) {
+			for(Mention n : b) {
+				if(commonCo.get(m.headWord()) != null && commonCo.get(m.headWord()).contains(n.headWord())) shouldMerge = true;
+			}
+		}	
+
+		if(shouldMerge) mergeSets(a, b);
+		return shouldMerge;
+	}
+
+	private boolean SpeakerTest(Set<Mention> a, Set<Mention> b) {
 		boolean shouldMerge = false;
 
 		for(Mention m : a) {
@@ -51,9 +87,10 @@ public class RuleBased implements CoreferenceSystem {
 		}
 
 		if(shouldMerge) mergeSets(a, b);
+		return shouldMerge;
 	}
 
-	private void ExactStringTest(Set<Mention> a, Set<Mention> b) {
+	private boolean ExactStringTest(Set<Mention> a, Set<Mention> b) {
 		boolean shouldMerge = false;
 		for(Mention m : a) {
 			for(Mention n : b) {
@@ -63,9 +100,10 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 		if(shouldMerge) mergeSets(a, b);
+		return shouldMerge;
 	}
 
-	private void AppositiveTest(Document doc, Set<Mention> a, Set<Mention> b) {
+	private boolean AppositiveTest(Document doc, Set<Mention> a, Set<Mention> b) {
 		boolean shouldMerge = false;
 		for(Mention m : a) {
 			for(Mention n : b) {
@@ -73,6 +111,7 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 		if(shouldMerge) mergeSets(a, b);
+		return shouldMerge;
 	}
 
 	private boolean sameAttributes(Mention m, Mention n) {
@@ -89,7 +128,7 @@ public class RuleBased implements CoreferenceSystem {
 		return true;
 	}
 
-	private void NounPronounTest(Document doc, Set<Mention> a, Set<Mention> b) {
+	private boolean NounPronounTest(Document doc, Set<Mention> a, Set<Mention> b) {
 		boolean shouldMerge = false;
 		for(Mention m : a) {
 			Token m_token = m.headToken();
@@ -114,9 +153,10 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 		if(shouldMerge) mergeSets(a, b);
+		return shouldMerge;
 	}
 
-	private void HeadWordTest(Set<Mention> a, Set<Mention> b) {
+	private boolean HeadWordTest(Set<Mention> a, Set<Mention> b) {
 		boolean shouldMerge = false;
 		for(Mention m : a) {
 			for(Mention n : b) {
@@ -126,9 +166,10 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 		if(shouldMerge) mergeSets(a, b);
+		return shouldMerge;
 	}
 
-	private void InclusionTest(Set<Mention> a, Set<Mention> b) {
+	private boolean InclusionTest(Set<Mention> a, Set<Mention> b) {
 		boolean shouldMerge = false;
 		for(Mention m : a) {
 			for(Mention n : b) {
@@ -137,6 +178,7 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 		if(shouldMerge) mergeSets(a, b);
+		return shouldMerge;
 	}
 
 	@Override
@@ -150,28 +192,14 @@ public class RuleBased implements CoreferenceSystem {
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
-				ExactStringTest(a, b);
+				if(ExactStringTest(a, b)) break;
 			}
 		}
 
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
-				HeadWordTest(a, b);
-			}
-		}
-
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				NounPronounTest(doc, a, b);
-			}
-		}
-
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				SpeakerTest(a, b);
+				if(BaselineCoreferenceTest(a, b)) break;
 			}
 		}
 
@@ -179,19 +207,41 @@ public class RuleBased implements CoreferenceSystem {
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
-				AppositiveTest(doc, a, b);
+				if(HeadWordTest(a, b)) break;
 			}
 		}
+
+/*		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(NounPronounTest(doc, a, b)) break;
+			}
+		}
+*/
 
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
-				InclusionTest(a, b);
+				if(SpeakerTest(a, b)) break;
+			}
+		}
+
+/*
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(AppositiveTest(doc, a, b)) break;
 			}
 		}
 
 
-
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(InclusionTest(a, b)) break;
+			}
+		}
+*/
 
 		for(Set<Mention> a : clusters) {
 			ClusteredMention c = null;
