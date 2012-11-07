@@ -24,6 +24,35 @@ public class RuleBased implements CoreferenceSystem {
 		b.removeAll(b);
 	}
 
+	private boolean areMentionsAppositive(Document doc, Mention m, Mention n) {
+		if(!m.parse.getLabel().equals("NP")) return false;
+		if(!n.parse.getLabel().equals("NP")) return false;
+		if(!m.sentence.equals(n.sentence)) return false;
+
+		if(doc.indexOfMention(m) + 1 == doc.indexOfMention(n)) return true;
+		if(doc.indexOfMention(m) + 2 == doc.indexOfMention(n)) 
+			if(doc.getMentions().get(doc.indexOfMention(m) + 1).headToken().posTag().equals("VBD")) return true;
+
+		return false;
+	}
+
+	private void SpeakerTest(Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = false;
+
+		for(Mention m : a) {
+			for(Mention n : b) {
+				Pronoun p = Pronoun.valueOrNull(m.gloss());
+				if(p == null) continue;
+				if(!m.headToken().isQuoted()) continue;
+	
+				if(m.headToken().speaker().equals(n.gloss()) && (p.speaker == Pronoun.Speaker.FIRST_PERSON))
+					shouldMerge = true;
+			}
+		}
+
+		if(shouldMerge) mergeSets(a, b);
+	}
+
 	private void ExactStringTest(Set<Mention> a, Set<Mention> b) {
 		boolean shouldMerge = false;
 		for(Mention m : a) {
@@ -31,6 +60,16 @@ public class RuleBased implements CoreferenceSystem {
 				if(Pronoun.isSomePronoun(m.gloss())) continue;
 				if(Pronoun.isSomePronoun(n.gloss())) continue;
 				if(m.gloss().equalsIgnoreCase(n.gloss())) { shouldMerge = true; break; }
+			}
+		}
+		if(shouldMerge) mergeSets(a, b);
+	}
+
+	private void AppositiveTest(Document doc, Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = false;
+		for(Mention m : a) {
+			for(Mention n : b) {
+				if(areMentionsAppositive(doc, m, n) && sameAttributes(m, n)) shouldMerge = true;
 			}
 		}
 		if(shouldMerge) mergeSets(a, b);
@@ -50,20 +89,29 @@ public class RuleBased implements CoreferenceSystem {
 		return true;
 	}
 
-	// Doesn't work!
-	private void ExactPronounPronounTest(Set<Mention> a, Set<Mention> b) {
-		boolean shouldMerge = true;
+	private void NounPronounTest(Document doc, Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = false;
 		for(Mention m : a) {
-			for(Mention n : b) {
-				Pronoun p_m = Pronoun.valueOrNull(m.gloss());
-				Pronoun p_n = Pronoun.valueOrNull(m.gloss());
-				if(p_m == null || p_n == null) continue;
-				
-				if(!sameAttributes(m, n)) shouldMerge = false;
+			Token m_token = m.headToken();
+			Pronoun m_pronoun = Pronoun.valueOrNull(m_token.word());
+			if(m_pronoun == null) continue;
 
-				if(!shouldMerge) break;
+			for(Mention n : b) {
+				Token n_token = n.headToken();
+				if(Pronoun.isSomePronoun(n_token.word())) continue;
+
+				if(n_token.isPluralNoun()) {
+					if(!m_pronoun.plural) continue;
+					if(!sameAttributes(m, n)) continue;
+					if(doc.indexOfSentence(m.sentence) < doc.indexOfSentence(n.sentence)) continue;
+					shouldMerge = true;
+				} else if(n_token.isProperNoun() && !n_token.isQuoted()) {
+					if(m_pronoun.plural) continue;
+					if(!sameAttributes(m, n)) continue;
+					if(doc.indexOfSentence(m.sentence) < doc.indexOfSentence(n.sentence)) continue;
+					shouldMerge = true;
+				}
 			}
-			if(!shouldMerge) break;
 		}
 		if(shouldMerge) mergeSets(a, b);
 	}
@@ -116,9 +164,34 @@ public class RuleBased implements CoreferenceSystem {
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
+				NounPronounTest(doc, a, b);
+			}
+		}
+
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				SpeakerTest(a, b);
+			}
+		}
+
+
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				AppositiveTest(doc, a, b);
+			}
+		}
+
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
 				InclusionTest(a, b);
 			}
 		}
+
+
+
 
 		for(Set<Mention> a : clusters) {
 			ClusteredMention c = null;
