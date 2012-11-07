@@ -132,22 +132,22 @@ public class RuleBased implements CoreferenceSystem {
 		boolean shouldMerge = false;
 		for(Mention m : a) {
 			Token m_token = m.headToken();
-			Pronoun m_pronoun = Pronoun.valueOrNull(m_token.word());
+			Pronoun m_pronoun = Pronoun.valueOrNull(m.gloss());
 			if(m_pronoun == null) continue;
 
 			for(Mention n : b) {
 				Token n_token = n.headToken();
-				if(Pronoun.isSomePronoun(n_token.word())) continue;
+				if(Pronoun.isSomePronoun(n.gloss())) continue;
 
 				if(n_token.isPluralNoun()) {
 					if(!m_pronoun.plural) continue;
 					if(!sameAttributes(m, n)) continue;
-					if(doc.indexOfSentence(m.sentence) < doc.indexOfSentence(n.sentence)) continue;
+					if(doc.indexOfSentence(m.sentence) <= doc.indexOfSentence(n.sentence)) continue;
 					shouldMerge = true;
-				} else if(n_token.isProperNoun() && !n_token.isQuoted()) {
+				} else if(!n_token.isQuoted()) {
 					if(m_pronoun.plural) continue;
 					if(!sameAttributes(m, n)) continue;
-					if(doc.indexOfSentence(m.sentence) < doc.indexOfSentence(n.sentence)) continue;
+					if(doc.indexOfSentence(m.sentence) <= doc.indexOfSentence(n.sentence)) continue;
 					shouldMerge = true;
 				}
 			}
@@ -173,8 +173,32 @@ public class RuleBased implements CoreferenceSystem {
 		boolean shouldMerge = false;
 		for(Mention m : a) {
 			for(Mention n : b) {
-				if(n.gloss().length() < 6) continue;
-				if(m.gloss().indexOf(n.gloss()) != -1 && sameAttributes(m, n)) { shouldMerge = true; break; }
+				if(n.gloss().length() < 8) continue;
+				if(m.gloss().toUpperCase().indexOf(n.gloss().toUpperCase()) != -1 && sameAttributes(m, n)) { shouldMerge = true; break; }
+			}
+		}
+		if(shouldMerge) mergeSets(a, b);
+		return shouldMerge;
+	}
+
+	private Set<String> retrieveModifiers(Mention m) {
+		Set<String> r = new HashSet<String>();
+		for(int i = m.beginIndexInclusive; i < m.endIndexExclusive; i++) {
+			if(m.sentence.posTags.get(i).equals("NP")) r.add(m.sentence.words.get(i));	
+		}
+		return r;
+	}
+
+	private boolean SimilarModifiers(Set<Mention> a, Set<Mention> b) {
+		boolean shouldMerge = true;
+		for(Mention m : a) {
+			Set<String> modifiers_m = retrieveModifiers(m);
+			for(Mention n : b) {
+				Set<String> modifiers_n = retrieveModifiers(n);
+				if(modifiers_n.size() == 0 || modifiers_m.size() == 0) shouldMerge = false;
+				for(String z : modifiers_m) {
+					if(!modifiers_n.contains(z)) shouldMerge = false;
+				}
 			}
 		}
 		if(shouldMerge) mergeSets(a, b);
@@ -203,15 +227,24 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 
-
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
 				if(HeadWordTest(a, b)) break;
 			}
 		}
+/*
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(InclusionTest(a, b)) break;
+			}
+		}
+*/
 
-/*		for(Set<Mention> a : clusters) {
+
+/*
+		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
 				if(NounPronounTest(doc, a, b)) break;
@@ -226,6 +259,13 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(SimilarModifiers(a, b)) break;
+			}
+		}
+
 /*
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
@@ -235,12 +275,6 @@ public class RuleBased implements CoreferenceSystem {
 		}
 
 
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(InclusionTest(a, b)) break;
-			}
-		}
 */
 
 		for(Set<Mention> a : clusters) {
