@@ -80,27 +80,31 @@ public class Hobbs {
     Set<Tree<String>> p = new IdentityHashSet<Tree<String>>();
     Tree<String> X = walkUpFindNPorS(ancestors, p);
     
-    List<Tree<String>> candidates = leftRightBFS(X, p, true);
+    List<Tree<String>> candidates = new ArrayList<Tree<String>>();
     
-    while ((X = walkUpFindNPorS(ancestors, p)) != null) {
-      if (X.getLabel().equals("NP")) {
-        boolean passThroughDominatedNominal = false;
+    if (X != null) {
+      candidates.addAll(leftRightBFS(X, p, true));
+      
+      while ((X = walkUpFindNPorS(ancestors, p)) != null) {
+        if (X.getLabel().equals("NP")) {
+          boolean passThroughDominatedNominal = false;
+          
+          for (Tree<String> child: candidates)
+            if (p.contains(child)) {
+              String label = child.getLabel();
+              if (label.equals("NN") || label.equals("NNS") || label.equals("NNP") || label.equals("NNPS"))
+                passThroughDominatedNominal = true;
+            }
+          
+          if (!passThroughDominatedNominal)
+            candidates.add(X);
+        }
         
-        for (Tree<String> child: candidates)
-          if (p.contains(child)) {
-            String label = child.getLabel();
-            if (label.equals("NN") || label.equals("NNS") || label.equals("NNP") || label.equals("NNPS"))
-              passThroughDominatedNominal = true;
-          }
+        candidates.addAll(leftRightBFS(X, p, false));
         
-        if (!passThroughDominatedNominal)
-          candidates.add(X);
+        if (X.getLabel().equals("S"))
+          candidates.addAll(stepEight(X, p));
       }
-      
-      candidates.addAll(leftRightBFS(X, p, false));
-      
-      if (X.getLabel().equals("S"))
-        candidates.addAll(stepEight(X, p));
     }
     
     for (int sentenceIndex = startSentenceIndex - 1; sentenceIndex >= endSentenceIndex; sentenceIndex--)
