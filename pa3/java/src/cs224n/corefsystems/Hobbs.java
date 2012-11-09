@@ -1,9 +1,12 @@
 package cs224n.corefsystems;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
@@ -16,6 +19,46 @@ import cs224n.util.Pair;
 import edu.stanford.nlp.util.IdentityHashSet;
 
 public class Hobbs {
+  public static class Candidate {
+    int sentenceIndex;
+    int wordIndexStart;
+    int wordIndexEnd;
+    
+    public Candidate(int sentenceIndex, int wordIndexStart, int wordIndexEnd) {
+      this.sentenceIndex = sentenceIndex;
+      this.wordIndexStart = wordIndexStart;
+      this.wordIndexEnd = wordIndexEnd;
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      result = prime * result + sentenceIndex;
+      result = prime * result + wordIndexEnd;
+      result = prime * result + wordIndexStart;
+      return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (this == obj) return true;
+      if (obj == null) return false;
+      if (getClass() != obj.getClass()) return false;
+      Candidate other = (Candidate) obj;
+      if (sentenceIndex != other.sentenceIndex) return false;
+      if (wordIndexEnd != other.wordIndexEnd) return false;
+      if (wordIndexStart != other.wordIndexStart) return false;
+      return true;
+    }
+
+    @Override
+    public String toString() {
+      return "Candidate [" + sentenceIndex + ": " + wordIndexStart
+          + ", " + wordIndexEnd + "]";
+    }
+  }
+  
   public static void getHobbsCandidates(Mention pronoun) {
     Document doc = pronoun.doc;
     Sentence sentence = pronoun.sentence;
@@ -55,12 +98,25 @@ public class Hobbs {
         candidates.addAll(stepEight(X, p));
     }
     
-    // go through previous sentences
+    // TODO: go through previous sentences
     
     System.out.println();
     for (Tree<String> cand: candidates)
       System.out.println(cand.getYield());
     
+    Map<Tree<String>, Pair<Integer, Integer>> treeIndexMap = new IdentityHashMap<Tree<String>, Pair<Integer, Integer>>();    
+    
+    appendLocations(sentence.parse, 0, 0, treeIndexMap);
+    
+    Map<Candidate, Integer> result = new HashMap<Candidate, Integer>();
+    
+    for (int dist = 0; dist < candidates.size(); dist++) {
+      Tree<String> candidate = candidates.get(dist);
+      Pair<Integer, Integer> location = treeIndexMap.get(candidate);
+      result.put(new Candidate(location.getFirst(), location.getSecond(), location.getSecond() + candidate.getYield().size()), dist);
+    }
+    
+    System.out.println(result);
   }
   
   public static void findMentionNP(Mention pronoun, Tree<String> parse, Stack<Tree<String>> path) {
@@ -170,5 +226,19 @@ public class Hobbs {
     }
     
     return candidates;
+  }
+  
+  private static int appendLocations(Tree<String> current, int sentenceIndex, int currentWordIndex, Map<Tree<String>, Pair<Integer, Integer>> treeIndexMap) {
+    if (current.isLeaf()) {
+      treeIndexMap.put(current, new Pair<Integer, Integer>(sentenceIndex, currentWordIndex));
+      return currentWordIndex + 1;
+    }
+    
+    treeIndexMap.put(current, new Pair<Integer, Integer>(sentenceIndex, currentWordIndex));
+    for (Tree<String> child: current.getChildren()) {
+      currentWordIndex = appendLocations(child, sentenceIndex, currentWordIndex, treeIndexMap);
+    }
+    
+    return currentWordIndex;
   }
 }
