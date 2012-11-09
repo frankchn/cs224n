@@ -48,7 +48,7 @@ public interface Feature {
       bucket = value * numBuckets / max;
       if(bucket < 0 || bucket >= numBuckets){ throw new IllegalStateException("Bucket out of range: " + value + " max="+max+" numbuckets="+numBuckets); }
     }
-    public boolean equals(Object o){ return o instanceof IntIndicator && o.getClass().equals(this.getClass()) && ((IntIndicator) o).value == bucket; }
+    public boolean equals(Object o){ return o instanceof BucketIndicator && o.getClass().equals(this.getClass()) && ((BucketIndicator) o).bucket == bucket; }
     public int hashCode(){ return this.getClass().hashCode() ^ bucket; }
     public String toString(){ return this.getClass().getSimpleName() + "(" + bucket + "/" + numBuckets + ")"; }
   }
@@ -103,10 +103,6 @@ public interface Feature {
   
   public static class HeadWordMatch extends Indicator {
     public HeadWordMatch(boolean match){ super(match); }
-  }
-  
-  public static class StrictGenderMatch extends Indicator {
-    public StrictGenderMatch(boolean strictGenderMatch){ super(strictGenderMatch); }
   }
   
   public static class PronounI extends Indicator {
@@ -169,6 +165,29 @@ public interface Feature {
     public HasPronoun(boolean has){ super(has); }
   }
   
+  public static class HobbsDistance extends BucketIndicator {
+    public HobbsDistance(int distance){ super(Math.min(distance, 29), 30, 15); }
+  }
+  
+  public static class PrefixMatch extends Indicator {
+    public PrefixMatch(boolean match){ super(match); }
+  }
+  
+  public static class MentionPair extends StringIndicator {
+    public MentionPair(String str){ super(str); }
+  }
+  
+  public static class MentionI extends StringIndicator {
+    public MentionI(String str){ super(str); }
+  }
+  
+  public static class POSPair extends StringIndicator {
+    public POSPair(String str){ super(str); }
+  }
+  
+  public static class PronounStrictGender extends StringIndicator {
+    public PronounStrictGender(String str){ super(str); }
+  }
   /*
    * TODO: Add values to the indicators here.
    */
