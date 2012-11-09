@@ -129,26 +129,26 @@ public class RuleBased implements CoreferenceSystem {
 	}
 
 	private boolean NounPronounTest(Document doc, Set<Mention> a, Set<Mention> b) {
-		boolean shouldMerge = false;
+		boolean shouldMerge = true;
 		for(Mention m : a) {
 			Token m_token = m.headToken();
 			Pronoun m_pronoun = Pronoun.valueOrNull(m.gloss());
-			if(m_pronoun == null) continue;
+			if(m_pronoun == null) { shouldMerge = false; continue; }
 
 			for(Mention n : b) {
 				Token n_token = n.headToken();
-				if(Pronoun.isSomePronoun(n.gloss())) continue;
+				if(Pronoun.isSomePronoun(n.gloss())) { shouldMerge = false; continue; }
 
 				if(n_token.isPluralNoun()) {
 					if(!m_pronoun.plural) continue;
 					if(!sameAttributes(m, n)) continue;
 					if(doc.indexOfSentence(m.sentence) <= doc.indexOfSentence(n.sentence)) continue;
-					shouldMerge = true;
+					shouldMerge = false;
 				} else if(!n_token.isQuoted()) {
 					if(m_pronoun.plural) continue;
 					if(!sameAttributes(m, n)) continue;
 					if(doc.indexOfSentence(m.sentence) <= doc.indexOfSentence(n.sentence)) continue;
-					shouldMerge = true;
+					shouldMerge = false;
 				}
 			}
 		}
@@ -205,6 +205,25 @@ public class RuleBased implements CoreferenceSystem {
 		return shouldMerge;
 	}
 
+	private boolean HobbsTest(Set<Mention> a, Set<Mention> b, Document doc) {
+		boolean shouldMerge = false;
+		for(Mention m : a) {
+			if(!Pronoun.isSomePronoun(m.gloss()) || Pronoun.valueOrNull(m.gloss()) == null) continue;
+			Map<Hobbs.Candidate, Integer> m_hobbs = Hobbs.getHobbsCandidates(m);
+			for(Mention n : b) {
+				if(!sameAttributes(m, n)) break;
+				for(Hobbs.Candidate h : m_hobbs.keySet()) {
+					if(doc.indexOfSentence(n.sentence) == h.sentenceIndex &&
+					   n.beginIndexInclusive == h.wordIndexStart &&
+					   n.endIndexExclusive == h.wordIndexEnd) {
+						shouldMerge = true;
+					}
+				}
+			}
+		}
+		return shouldMerge;
+	}
+
 	@Override
 	public List<ClusteredMention> runCoreference(Document doc) {
 		List<ClusteredMention> mentions = new ArrayList<ClusteredMention>();
@@ -220,29 +239,6 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(BaselineCoreferenceTest(a, b)) break;
-			}
-		}
-
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(HeadWordTest(a, b)) break;
-			}
-		}
-/*
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(InclusionTest(a, b)) break;
-			}
-		}
-*/
-
-
 /*
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
@@ -255,9 +251,44 @@ public class RuleBased implements CoreferenceSystem {
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
-				if(SpeakerTest(a, b)) break;
+				if(BaselineCoreferenceTest(a, b)) break;
 			}
 		}
+
+
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(HobbsTest(a, b, doc)) break;
+			}
+		}
+
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(HeadWordTest(a, b)) break;
+			}
+		}
+
+
+/*
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(InclusionTest(a, b)) break;
+			}
+		}
+*/
+
+
+
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(SpeakerTest(a, b)) break;
+			}
+		} 
+
 
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
@@ -265,6 +296,7 @@ public class RuleBased implements CoreferenceSystem {
 				if(SimilarModifiers(a, b)) break;
 			}
 		}
+
 
 /*
 		for(Set<Mention> a : clusters) {
