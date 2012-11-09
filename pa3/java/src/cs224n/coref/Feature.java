@@ -177,8 +177,16 @@ public interface Feature {
     public MentionPair(String str){ super(str); }
   }
   
+  public static class MentionI extends StringIndicator {
+    public MentionI(String str){ super(str); }
+  }
+  
   public static class POSPair extends StringIndicator {
     public POSPair(String str){ super(str); }
+  }
+  
+  public static class PronounStrictGender extends StringIndicator {
+    public PronounStrictGender(String str){ super(str); }
   }
   /*
    * TODO: Add values to the indicators here.

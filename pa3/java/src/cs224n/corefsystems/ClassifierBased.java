@@ -47,14 +47,15 @@ public class ClassifierBased implements CoreferenceSystem {
             Feature.SentenceDistance.class,
             Feature.MentionPair.class,
             Feature.POSPair.class,
-            //Pair.make(Feature.HasPronoun.class, Feature.GenderAgreement.class),
+            Pair.make(Feature.NERCandidate.class, Feature.MentionI.class),
+            Feature.PronounStrictGender.class,
+            //Pair.make(Feature.HasPronoun.class, Feature.NERAgreement.class),
             //Pair.make(Feature.GenderAgreement.class, Feature.NumberAgreement.class),
             //Feature.PronounJ.class,
             //Pair.make(Feature.HasPronoun.class, Feature.HeadWordMatch.class),
             //Pair.make(Feature.PronounI.class, Feature.PronounJ.class),
             //Pair.make(Feature.SentenceDistance.class, Feature.PronounI.class),
             //Pair.make(Feature.ProperNounJ.class, Feature.PronounI.class),
-            //Pair.make(Feature.NERCandidate.class, Feature.PronounI.class),
             //Feature.NERAgreement.class,
             //Pair.make(Feature.HasPronoun.class, Feature.NumberAgreement.class),
             //Pair.make(Feature.HasPronoun.class, Feature.StrictGenderMatch.class),
@@ -155,12 +156,14 @@ public class ClassifierBased implements CoreferenceSystem {
 			else if (clazz.equals(Feature.NERAgreement.class)) {
                 String headNER = onPrix.headToken().nerTag();
                 String candidateNER = candidate.headToken().nerTag();
-                //return new Feature.NERAgreement(headNER.equals("O") || candidateNER.equals("O") ||
-                //    (headNER.equals(candidateNER)));
-                return new Feature.NERAgreement((headNER.equals(candidateNER)));
+                return new Feature.NERAgreement(headNER.equals("O") || candidateNER.equals("O") ||
+                    (headNER.equals(candidateNER)));
 			}
 			else if (clazz.equals(Feature.NERCandidate.class)) {
                 return new Feature.NERCandidate(candidate.headToken().nerTag());
+			}
+			else if (clazz.equals(Feature.MentionI.class)) {
+                return new Feature.MentionI(onPrix.gloss());
 			}
 			else if (clazz.equals(Feature.GenderAgreement.class)) {
 			    Pair<Boolean, Boolean> genderMatch = Util.haveGenderAndAreSameGender(onPrix, candidate);
@@ -179,6 +182,21 @@ public class ClassifierBased implements CoreferenceSystem {
 			}
 			else if (clazz.equals(Feature.POSPair.class)) {
                 return new Feature.POSPair(onPrix.headToken().posTag() + "#" + candidate.headToken().posTag());
+			}
+			else if (clazz.equals(Feature.PronounStrictGender.class)) {
+                Pronoun pronounI = Pronoun.valueOrNull(onPrix.gloss());
+                Pronoun pronounJ = Pronoun.valueOrNull(candidate.gloss());
+                
+                if (pronounI == null || pronounJ == null)
+                  return new Feature.PronounStrictGender("n/a");
+                
+                if (pronounI.gender == Gender.NEUTRAL || pronounJ.gender == Gender.NEUTRAL)
+                  return new Feature.PronounStrictGender(pronounI.gender == pronounJ.gender ? "agree" : "disagree");
+                
+                if (pronounI.gender.isCompatible(pronounJ.gender))
+                  return new Feature.PronounStrictGender("agree");
+                else
+                  return new Feature.PronounStrictGender("disagree");
 			}
 			else if (clazz.equals(Feature.HobbsDistance.class)) {
                 if (!Pronoun.isSomePronoun(onPrix.gloss()))
