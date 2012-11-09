@@ -30,11 +30,6 @@ public class ClassifierBased implements CoreferenceSystem {
 	}
 
 	private static final Set<Object> ACTIVE_FEATURES = mkSet(new Object[]{
-
-			/*
-			 * TODO: Create a set of active features
-			 */
-
 			Feature.HeadWordMatch.class,
             Pair.make(Feature.HasPronoun.class, Feature.NumberAgreement.class),
             Feature.GenderAgreement.class,
@@ -49,20 +44,6 @@ public class ClassifierBased implements CoreferenceSystem {
             Feature.POSPair.class,
             Pair.make(Feature.NERCandidate.class, Feature.MentionI.class),
             Feature.PronounStrictGender.class,
-            //Pair.make(Feature.HasPronoun.class, Feature.NERAgreement.class),
-            //Pair.make(Feature.GenderAgreement.class, Feature.NumberAgreement.class),
-            //Feature.PronounJ.class,
-            //Pair.make(Feature.HasPronoun.class, Feature.HeadWordMatch.class),
-            //Pair.make(Feature.PronounI.class, Feature.PronounJ.class),
-            //Pair.make(Feature.SentenceDistance.class, Feature.PronounI.class),
-            //Pair.make(Feature.ProperNounJ.class, Feature.PronounI.class),
-            //Feature.NERAgreement.class,
-            //Pair.make(Feature.HasPronoun.class, Feature.NumberAgreement.class),
-            //Pair.make(Feature.HasPronoun.class, Feature.StrictGenderMatch.class),
-            //Feature.PronounI.class,
-            //Feature.PronounJ.class,
-            //Feature.ProperNounI.class,
-            //Feature.ProperNounJ.class,
 	});
 	
 	private Map<Mention, Map<Hobbs.Candidate, Integer>> hobbsCache = 
