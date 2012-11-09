@@ -1,6 +1,7 @@
 package cs224n.corefsystems;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -59,9 +60,13 @@ public class Hobbs {
     }
   }
   
+  public static final int NUM_SENTENCES_LOOKBEHIND = 3;
+  
   public static Map<Candidate, Integer> getHobbsCandidates(Mention pronoun) {
     Document doc = pronoun.doc;
     Sentence sentence = pronoun.sentence;
+    int startSentenceIndex = doc.indexOfSentence(sentence);
+    int endSentenceIndex = Math.max(0, startSentenceIndex-NUM_SENTENCES_LOOKBEHIND);
     
     Tree<String> parse = sentence.parse;
     
@@ -98,7 +103,8 @@ public class Hobbs {
         candidates.addAll(stepEight(X, p));
     }
     
-    // TODO: go through previous sentences
+    for (int sentenceIndex = startSentenceIndex - 1; sentenceIndex >= endSentenceIndex; sentenceIndex--)
+      candidates.addAll(leftRightBFS(doc.sentences.get(sentenceIndex).parse, Collections.<Tree<String>>emptySet(), false));
     
     System.out.println();
     for (Tree<String> cand: candidates)
@@ -106,7 +112,8 @@ public class Hobbs {
     
     Map<Tree<String>, Pair<Integer, Integer>> treeIndexMap = new IdentityHashMap<Tree<String>, Pair<Integer, Integer>>();    
     
-    appendLocations(sentence.parse, 0, 0, treeIndexMap);
+    for (int sentenceIndex = endSentenceIndex; sentenceIndex <= startSentenceIndex; sentenceIndex++)
+      appendLocations(doc.sentences.get(sentenceIndex).parse, sentenceIndex, 0, treeIndexMap);
     
     Map<Candidate, Integer> result = new HashMap<Candidate, Integer>();
     
@@ -177,20 +184,21 @@ public class Hobbs {
       Pair<Tree<String>, Boolean> current = bfsQ.poll();
       
       Tree<String> tree = current.getFirst();
-      boolean hasNPorSbetween = current.getSecond();
+      boolean canAdd = current.getSecond();
       
-      if (tree.getLabel().equals("S") || tree.getLabel().equals("NP")) {
-        if (hasNPorSbetween)
-          candidates.add(tree);
-        else
-          hasNPorSbetween = true;
+      if (tree.getLabel().equals("S") || tree.getLabel().equals("NP")) { 
+        if (canAdd) {
+          if (tree.getLabel().equals("NP"))
+            candidates.add(tree);
+        }
+        canAdd = true;
       }
       
       for (Tree<String> child: tree.getChildren()) {
         if (blocker.contains(child))
           break;
         
-        bfsQ.add(new Pair<Tree<String>, Boolean>(child, hasNPorSbetween));
+        bfsQ.add(new Pair<Tree<String>, Boolean>(child, canAdd));
       }
     }
     

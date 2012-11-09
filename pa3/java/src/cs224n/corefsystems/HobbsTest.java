@@ -21,15 +21,21 @@ public class HobbsTest {
    */
   public static void main(String[] args) {
     String input = "(S  (NP (DT The) (NN castle)) (VP (VB was) (NP (DT the) (NP (NN home) (PP (PRP of) (NNP Arthur))))) (PP (IN until) (NP (NN 536) (SH (WHB when) (S  (NP (PRP he)) (VP (VBD moved) (NP (PRP it))))))))";
+    input += input;
     Reader inputReader = new StringReader(input);
     
     PennTreeReader treeReader = new Trees.PennTreeReader(inputReader);
     Tree<String> tree = treeReader.next();
+    Tree<String> tree2 = treeReader.next();
     
     List<String> words = tree.getYield();
     
     Sentence sentence = new Sentence(words, words, tree.getPreTerminalYield(), words, words, tree);
+    
+    words = tree2.getYield();
+    Sentence sentence2 = new Sentence(words, words, tree2.getPreTerminalYield(), words, words, tree2);
     List<Sentence> sentences = new ArrayList<Sentence>();
+    sentences.add(sentence2);
     sentences.add(sentence);
     Document doc = new Document("test1", sentences);
     
