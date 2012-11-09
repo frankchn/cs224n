@@ -258,41 +258,12 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 
-/*
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(NounPronounTest(doc, a, b)) break;
-			}
-		}
-*/
-/*
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(BaselineCoreferenceTest(a, b)) break;
-			}
-		}
-*/
-
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
 				if(HeadWordTest(a, b)) break;
 			}
 		}
-
-
-/*
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(InclusionTest(a, b)) break;
-			}
-		}
-*/
-
-
 
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
@@ -308,18 +279,6 @@ public class RuleBased implements CoreferenceSystem {
 				if(SimilarModifiers(a, b)) break;
 			}
 		}
-
-
-/*
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(AppositiveTest(doc, a, b)) break;
-			}
-		}
-
-
-*/
 
 		for(Set<Mention> a : clusters) {
 			ClusteredMention c = null;
