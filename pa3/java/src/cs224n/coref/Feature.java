@@ -48,7 +48,7 @@ public interface Feature {
       bucket = value * numBuckets / max;
       if(bucket < 0 || bucket >= numBuckets){ throw new IllegalStateException("Bucket out of range: " + value + " max="+max+" numbuckets="+numBuckets); }
     }
-    public boolean equals(Object o){ return o instanceof IntIndicator && o.getClass().equals(this.getClass()) && ((IntIndicator) o).value == bucket; }
+    public boolean equals(Object o){ return o instanceof BucketIndicator && o.getClass().equals(this.getClass()) && ((BucketIndicator) o).bucket == bucket; }
     public int hashCode(){ return this.getClass().hashCode() ^ bucket; }
     public String toString(){ return this.getClass().getSimpleName() + "(" + bucket + "/" + numBuckets + ")"; }
   }
@@ -169,6 +169,9 @@ public interface Feature {
     public HasPronoun(boolean has){ super(has); }
   }
   
+  public static class HobbsDistance extends BucketIndicator {
+    public HobbsDistance(int distance){ super(Math.min(distance, 29), 30, 15); }
+  }
   /*
    * TODO: Add values to the indicators here.
    */

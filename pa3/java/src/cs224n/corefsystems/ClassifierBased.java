@@ -1,6 +1,7 @@
 package cs224n.corefsystems;
 
 import cs224n.coref.*;
+import cs224n.corefsystems.Hobbs.Candidate;
 import cs224n.util.Pair;
 import edu.stanford.nlp.classify.LinearClassifier;
 import edu.stanford.nlp.classify.LinearClassifierFactory;
@@ -44,6 +45,7 @@ public class ClassifierBased implements CoreferenceSystem {
             Feature.PossessivePronounJ.class,
             Feature.ReflexivePronounI.class,
             Feature.ReflexivePronounJ.class,
+            Pair.make(Feature.PronounI.class, Feature.HobbsDistance.class),
             //Pair.make(Feature.GenderAgreement.class, Feature.NumberAgreement.class),
             //Feature.PronounJ.class,
             //Pair.make(Feature.HasPronoun.class, Feature.HeadWordMatch.class),
@@ -64,6 +66,9 @@ public class ClassifierBased implements CoreferenceSystem {
 			//skeleton for how to create a pair feature
 			//Pair.make(Feature.IsFeature1.class, Feature.IsFeature2.class),
 	});
+	
+	private Map<Mention, Map<Hobbs.Candidate, Integer>> hobbsCache = 
+	  new HashMap<Mention, Map<Hobbs.Candidate, Integer>>();
 
 
 	private LinearClassifier<Boolean,Feature> classifier;
@@ -94,16 +99,16 @@ public class ClassifierBased implements CoreferenceSystem {
 			    return new Feature.StrictGenderMatch(genderMatch.getFirst() && genderMatch.getSecond());
 			}
 			else if (clazz.equals(Feature.HasPronoun.class)) {
-                return new Feature.HasPronoun(Pronoun.isSomePronoun(onPrix.headWord()) || Pronoun.isSomePronoun(candidate.headWord()));
+                return new Feature.HasPronoun(Pronoun.isSomePronoun(onPrix.gloss()) || Pronoun.isSomePronoun(candidate.gloss()));
 			}
 			else if (clazz.equals(Feature.BothProperNoun.class)) {
 			    return new Feature.BothProperNoun(onPrix.headToken().isProperNoun() && candidate.headToken().isProperNoun());
 			}
 			else if (clazz.equals(Feature.PronounI.class)) {
-                return new Feature.PronounI(Pronoun.isSomePronoun(onPrix.headWord()));
+                return new Feature.PronounI(Pronoun.isSomePronoun(onPrix.gloss()));
 			}
 			else if (clazz.equals(Feature.PronounJ.class)) {
-                return new Feature.PronounJ(Pronoun.isSomePronoun(candidate.headWord()));
+                return new Feature.PronounJ(Pronoun.isSomePronoun(candidate.gloss()));
 			}
 			else if (clazz.equals(Feature.ProperNounI.class)) {
                 return new Feature.ProperNounI(onPrix.headToken().isProperNoun());
@@ -172,6 +177,23 @@ public class ClassifierBased implements CoreferenceSystem {
                     retval = genderMatch.getSecond() ? 1 : -1;
                 
                 return new Feature.GenderAgreement(retval);
+			}
+			else if (clazz.equals(Feature.HobbsDistance.class)) {
+                if (!Pronoun.isSomePronoun(onPrix.gloss()))
+                    return new Feature.HobbsDistance(100);
+                
+                if (!hobbsCache.containsKey(onPrix)) 
+                    hobbsCache.put(onPrix, Hobbs.getHobbsCandidates(onPrix));
+                
+                int dist = 100;
+                
+                try {
+                  dist = hobbsCache.get(onPrix).get(new Hobbs.Candidate(candidate.doc.indexOfSentence(candidate.sentence), candidate.beginIndexInclusive, candidate.endIndexExclusive));
+                }
+                catch (Exception e){
+                }
+                
+                return new Feature.HobbsDistance(dist);
 			}
 			else {
 				throw new IllegalArgumentException("Unregistered feature: " + clazz);
