@@ -71,7 +71,8 @@ public class Hobbs {
     Tree<String> parse = sentence.parse;
     
     Stack<Tree<String>> ancestors = new Stack<Tree<String>>();
-    findMentionNP(pronoun, parse, ancestors);
+    if (!findMentionNP(pronoun, parse, ancestors))
+      return Collections.<Candidate, Integer>emptyMap();
     
     for (Tree<String> item: ancestors) {
       System.out.println(item.getLabel());
@@ -132,12 +133,14 @@ public class Hobbs {
     return result;
   }
   
-  public static void findMentionNP(Mention pronoun, Tree<String> parse, Stack<Tree<String>> path) {
+  public static boolean findMentionNP(Mention pronoun, Tree<String> parse, Stack<Tree<String>> path) {
     path.push(parse);
     findMentionNPInternal(0, pronoun.headWordIndex, parse, path); 
     
-    while(!path.peek().getLabel().equals("NP"))
+    while(!path.isEmpty() && !path.peek().getLabel().equals("NP"))
       path.pop();
+    
+    return !path.isEmpty();
   }
   
   public static void findMentionNPInternal(int currentIndex, int desiredIndex, Tree<String> tree, Stack<Tree<String>> path) {
