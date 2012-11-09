@@ -75,7 +75,7 @@ public class Hobbs {
       return Collections.<Candidate, Integer>emptyMap();
     
     for (Tree<String> item: ancestors) {
-      System.out.println(item.getLabel());
+      //System.out.println(item.getLabel());
     }
     
     Set<Tree<String>> p = new IdentityHashSet<Tree<String>>();
@@ -111,9 +111,9 @@ public class Hobbs {
     for (int sentenceIndex = startSentenceIndex - 1; sentenceIndex >= endSentenceIndex; sentenceIndex--)
       candidates.addAll(leftRightBFS(doc.sentences.get(sentenceIndex).parse, Collections.<Tree<String>>emptySet(), false));
     
-    System.out.println();
-    for (Tree<String> cand: candidates)
-      System.out.println(cand.getYield());
+    //System.out.println();
+    //for (Tree<String> cand: candidates)
+      //System.out.println(cand.getYield());
     
     Map<Tree<String>, Pair<Integer, Integer>> treeIndexMap = new IdentityHashMap<Tree<String>, Pair<Integer, Integer>>();    
     
@@ -128,7 +128,7 @@ public class Hobbs {
       result.put(new Candidate(location.getFirst(), location.getSecond(), location.getSecond() + candidate.getYield().size()), dist);
     }
     
-    System.out.println(result);
+    //System.out.println(result);
     
     return result;
   }
