@@ -59,7 +59,7 @@ public class Hobbs {
     }
   }
   
-  public static void getHobbsCandidates(Mention pronoun) {
+  public static Map<Candidate, Integer> getHobbsCandidates(Mention pronoun) {
     Document doc = pronoun.doc;
     Sentence sentence = pronoun.sentence;
     
@@ -117,6 +117,8 @@ public class Hobbs {
     }
     
     System.out.println(result);
+    
+    return result;
   }
   
   public static void findMentionNP(Mention pronoun, Tree<String> parse, Stack<Tree<String>> path) {
