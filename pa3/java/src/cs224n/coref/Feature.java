@@ -105,10 +105,6 @@ public interface Feature {
     public HeadWordMatch(boolean match){ super(match); }
   }
   
-  public static class StrictGenderMatch extends Indicator {
-    public StrictGenderMatch(boolean strictGenderMatch){ super(strictGenderMatch); }
-  }
-  
   public static class PronounI extends Indicator {
     public PronounI(boolean pronounI){ super(pronounI); }
   }
@@ -171,6 +167,18 @@ public interface Feature {
   
   public static class HobbsDistance extends BucketIndicator {
     public HobbsDistance(int distance){ super(Math.min(distance, 29), 30, 15); }
+  }
+  
+  public static class PrefixMatch extends Indicator {
+    public PrefixMatch(boolean match){ super(match); }
+  }
+  
+  public static class MentionPair extends StringIndicator {
+    public MentionPair(String str){ super(str); }
+  }
+  
+  public static class POSPair extends StringIndicator {
+    public POSPair(String str){ super(str); }
   }
   /*
    * TODO: Add values to the indicators here.

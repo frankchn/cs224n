@@ -36,9 +36,7 @@ public class ClassifierBased implements CoreferenceSystem {
 			 */
 
 			Feature.HeadWordMatch.class,
-            //Pair.make(Feature.HasPronoun.class, Feature.HeadWordMatch.class),
             Pair.make(Feature.HasPronoun.class, Feature.NumberAgreement.class),
-            Pair.make(Feature.HasPronoun.class, Feature.GenderAgreement.class),
             Feature.GenderAgreement.class,
             Feature.NumberAgreement.class,
             Feature.PossessivePronounI.class,
@@ -46,6 +44,10 @@ public class ClassifierBased implements CoreferenceSystem {
             Feature.ReflexivePronounI.class,
             Feature.ReflexivePronounJ.class,
             Pair.make(Feature.PronounI.class, Feature.HobbsDistance.class),
+            Feature.SentenceDistance.class,
+            Feature.MentionPair.class,
+            Feature.POSPair.class,
+            //Pair.make(Feature.HasPronoun.class, Feature.GenderAgreement.class),
             //Pair.make(Feature.GenderAgreement.class, Feature.NumberAgreement.class),
             //Feature.PronounJ.class,
             //Pair.make(Feature.HasPronoun.class, Feature.HeadWordMatch.class),
@@ -56,15 +58,10 @@ public class ClassifierBased implements CoreferenceSystem {
             //Feature.NERAgreement.class,
             //Pair.make(Feature.HasPronoun.class, Feature.NumberAgreement.class),
             //Pair.make(Feature.HasPronoun.class, Feature.StrictGenderMatch.class),
-            //Feature.SentenceDistance.class,
             //Feature.PronounI.class,
             //Feature.PronounJ.class,
             //Feature.ProperNounI.class,
             //Feature.ProperNounJ.class,
-            //Feature.StrictGenderMatch.class,
-
-			//skeleton for how to create a pair feature
-			//Pair.make(Feature.IsFeature1.class, Feature.IsFeature2.class),
 	});
 	
 	private Map<Mention, Map<Hobbs.Candidate, Integer>> hobbsCache = 
@@ -92,11 +89,7 @@ public class ClassifierBased implements CoreferenceSystem {
 				return new Feature.ExactMatch(onPrix.gloss().equals(candidate.gloss()));
 			}
 			else if (clazz.equals(Feature.HeadWordMatch.class)) {
-                return new Feature.HeadWordMatch(onPrix.headWord().equals(candidate.headWord()));
-			}
-			else if (clazz.equals(Feature.StrictGenderMatch.class)) {
-			    Pair<Boolean, Boolean> genderMatch = Util.haveGenderAndAreSameGender(onPrix, candidate);
-			    return new Feature.StrictGenderMatch(genderMatch.getFirst() && genderMatch.getSecond());
+                return new Feature.HeadWordMatch(onPrix.headWord().toLowerCase().equals(candidate.headWord().toLowerCase()));
 			}
 			else if (clazz.equals(Feature.HasPronoun.class)) {
                 return new Feature.HasPronoun(Pronoun.isSomePronoun(onPrix.gloss()) || Pronoun.isSomePronoun(candidate.gloss()));
@@ -177,6 +170,15 @@ public class ClassifierBased implements CoreferenceSystem {
                     retval = genderMatch.getSecond() ? 1 : -1;
                 
                 return new Feature.GenderAgreement(retval);
+			}
+			else if (clazz.equals(Feature.PrefixMatch.class)) {
+			    return new Feature.PrefixMatch(onPrix.gloss().indexOf(candidate.gloss()) != -1);
+			}
+			else if (clazz.equals(Feature.MentionPair.class)) {
+                return new Feature.MentionPair(onPrix.gloss() + "#" + candidate.gloss());
+			}
+			else if (clazz.equals(Feature.POSPair.class)) {
+                return new Feature.POSPair(onPrix.headToken().posTag() + "#" + candidate.headToken().posTag());
 			}
 			else if (clazz.equals(Feature.HobbsDistance.class)) {
                 if (!Pronoun.isSomePronoun(onPrix.gloss()))
