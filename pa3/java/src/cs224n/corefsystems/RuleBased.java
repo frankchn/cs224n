@@ -121,9 +121,10 @@ public class RuleBased implements CoreferenceSystem {
 		Pair<Boolean, Boolean> number = Util.haveNumberAndAreSameNumber(m, n);
 		if(number.getFirst() && !number.getSecond()) return false;
 
-		if(!m.headToken().nerTag().equals(n.headToken().nerTag()) && 
-		   !m.headToken().nerTag().equals("O") &&
-		   !n.headToken().nerTag().equals("O")) return false;
+		if (!m.headToken().nerTag().equals("O") && !m.headToken().nerTag().equals("0") && 
+            !m.headToken().nerTag().equals(n.headToken().nerTag())) {
+			return false;
+		}
 
 		return true;
 	}
@@ -212,15 +213,26 @@ public class RuleBased implements CoreferenceSystem {
 			Map<Hobbs.Candidate, Integer> m_hobbs = Hobbs.getHobbsCandidates(m);
 			for(Mention n : b) {
 				if(!sameAttributes(m, n)) break;
+				if(m.headToken().isQuoted()) continue;
+				if(n.headToken().isQuoted()) continue;
+
+				if(doc.indexOfSentence(m.sentence) != doc.indexOfSentence(n.sentence)) continue;
+
 				for(Hobbs.Candidate h : m_hobbs.keySet()) {
 					if(doc.indexOfSentence(n.sentence) == h.sentenceIndex &&
 					   n.beginIndexInclusive == h.wordIndexStart &&
 					   n.endIndexExclusive == h.wordIndexEnd) {
+						//System.out.println("Candidate: " + m.gloss() + " / " + n.gloss());
 						shouldMerge = true;
+						break;
 					}
 				}
+
+				if(shouldMerge) break;
 			}
+			if(shouldMerge) break;
 		}
+		if(shouldMerge) mergeSets(a, b);
 		return shouldMerge;
 	}
 
@@ -239,6 +251,13 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 
+		for(Set<Mention> a : clusters) {
+			for(Set<Mention> b : clusters) {
+				if(a.equals(b)) continue;
+				if(HobbsTest(a, b, doc)) break;
+			}
+		}
+
 /*
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
@@ -247,21 +266,14 @@ public class RuleBased implements CoreferenceSystem {
 			}
 		}
 */
-
+/*
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
 				if(a.equals(b)) continue;
 				if(BaselineCoreferenceTest(a, b)) break;
 			}
 		}
-
-
-		for(Set<Mention> a : clusters) {
-			for(Set<Mention> b : clusters) {
-				if(a.equals(b)) continue;
-				if(HobbsTest(a, b, doc)) break;
-			}
-		}
+*/
 
 		for(Set<Mention> a : clusters) {
 			for(Set<Mention> b : clusters) {
