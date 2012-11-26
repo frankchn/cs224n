@@ -73,7 +73,8 @@ public class FeatureFactory {
 				System.out.println("Loaded " + currRow + " vectors into the matrix.");
 		}
 		in.close();
-		
+
+		System.out.println("Loaded " + currRow + " vectors into the matrix. Done.");
 		return allVecs;
 	}
 	// might be useful for word to number lookups, just access them directly in WindowModel
@@ -91,8 +92,9 @@ public class FeatureFactory {
 			h.put(line, i);
 			i++;
 		}
-		System.out.println("Vocab initialized to " + i + " words");
 		in.close();
+
+		System.out.println("Vocab initialized to " + i + " words. Done.");
 		
 		return wordToNum;
 	}
