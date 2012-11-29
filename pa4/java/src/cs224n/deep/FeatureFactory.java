@@ -55,26 +55,26 @@ public class FeatureFactory {
 		if (allVecs != null) 
 			return allVecs;
 		
-		allVecs = new SimpleMatrix(numToWord.size(), 50);
+		allVecs = new SimpleMatrix(50, numToWord.size());
 		
-		int currRow = 0;
+		int currCol = 0;
 		
 		BufferedReader in = new BufferedReader(new FileReader(vecFilename));
 		for(String line = in.readLine(); line != null; line = in.readLine()) {
-			int currCol = 0;
+			int currRow = 0;
 			Scanner f = new Scanner(line);
 			f.useLocale(Locale.US);
 			f.useDelimiter("\\s+");
 			while(f.hasNextDouble()) {
-				allVecs.set(currRow, currCol, f.nextDouble());
+				allVecs.set(currRow++, currCol, f.nextDouble());
 			}
-			currRow++;
-			if(currRow % 10000 == 0)
-				System.out.println("Loaded " + currRow + " vectors into the matrix.");
+			currCol++;
+			if(currCol % 10000 == 0)
+				System.out.println("Loaded " + currCol + " vectors into the matrix.");
 		}
 		in.close();
 
-		System.out.println("Loaded " + currRow + " vectors into the matrix. Done.");
+		System.out.println("Loaded " + currCol + " vectors into the matrix. Done.");
 		return allVecs;
 	}
 	// might be useful for word to number lookups, just access them directly in WindowModel
