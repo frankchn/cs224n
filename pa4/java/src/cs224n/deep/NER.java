@@ -22,6 +22,8 @@ public class NER {
 		//TODO: Implement this function (just reads in vocab and word vectors)
 		FeatureFactory.initializeVocab("../data/vocab.txt");
 		SimpleMatrix allVecs= FeatureFactory.readWordVectors("../data/wordVectors.txt");
+    
+		allVecs.extractMatrix(0, 5, 0, 5).print();
 	
 		// initialize model 
 		WindowModel model = new WindowModel(5, 100,0.001);

@@ -3,6 +3,7 @@ import java.lang.*;
 import java.util.*;
 
 import org.ejml.data.*;
+import org.ejml.ops.CommonOps;
 import org.ejml.simple.*;
 
 
@@ -54,19 +55,38 @@ public class WindowModel {
 	  for (int i = 0; i < numTrainWords; i++) {
         List<Integer> windowIndices = getWindowIndices(trainData, i);
         String label = trainData.get(i).label;
+        int y = label.equals("PERSON") ? 1 : 0;
         
         getTrainExample(trainExample, windowIndices);
-        
+        PropagationResult res = forwardProp(trainExample, true, y);
+	  }
+	}
+  
+    public PropagationResult forwardProp(SimpleMatrix x, boolean calcGrad, int y) {
         // forward prop
-        SimpleMatrix z = W.mult(trainExample).plus(b1);
+        SimpleMatrix z = W.mult(x).plus(b1);
         SimpleMatrix a = z.copy();
         applyTanh(a);
         
         double ua = U.dot(a) + b2;
         double h = sigmoid(ua);
-	  }
-	}
-  
+        
+        PropagationResult res = new PropagationResult(h);
+        
+        if (calcGrad) {
+          double coeff = -y*(1.0-h)-(1-y)*h;
+          SimpleMatrix delta = new SimpleMatrix(U.numRows(), U.numCols());
+          CommonOps.elementMult(U.scale(coeff).getMatrix(), a.getMatrix(), delta.getMatrix());
+          
+          res.gradb1 = delta;
+          res.gradb2 = coeff;
+          res.gradW = delta.mult(x.transpose());
+          res.gradU = a.scale(coeff);
+          res.gradL = delta.transpose().mult(W).transpose();
+        }
+        
+        return res;
+    }
 	
 	public void test(List<Datum> testData){
 		// TODO
@@ -113,5 +133,16 @@ public class WindowModel {
       }
       
       return indices;
+	}
+  
+	public class PropagationResult {
+      public double h;
+      public SimpleMatrix gradW, gradb1, gradL, gradU;
+      public double gradb2;
+      
+      
+      public PropagationResult(double h) {
+        this.h = h;
+      }
 	}
 }
