@@ -79,15 +79,17 @@ public class WindowModel {
           int y = label.equals("PERSON") ? 1 : 0;
 
           getWordVecs(trainExample, windowIndices);
-          PropagationResult res = forwardProp(trainExample, true, y, false);
+          PropagationResult res = forwardProp(trainExample, true, y, true);
+          
+          //System.out.println(res.cost + " " + res.h + " " + label);
 
           if (gradCheck)
             doGradCheck(res, trainExample, y);
 
           // gradient descent
-          U.minus(res.gradU.scale(learningRate));
-          W.minus(res.gradW.scale(learningRate));
-          b1.minus(res.gradb1.scale(learningRate));
+          U = U.minus(res.gradU.scale(learningRate));
+          W = W.minus(res.gradW.scale(learningRate));
+          b1 = b1.minus(res.gradb1.scale(learningRate));
           b2 -= res.gradb2 * learningRate;
 
           // apply L update
