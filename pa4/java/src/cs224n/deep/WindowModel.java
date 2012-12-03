@@ -7,23 +7,32 @@ import org.ejml.ops.CommonOps;
 import org.ejml.ops.SpecializedOps;
 import org.ejml.simple.*;
 
+import cc.mallet.optimize.LimitedMemoryBFGS;
+import cc.mallet.optimize.Optimizable;
+
 
 import java.text.*;
 
-public class WindowModel {
+public class WindowModel implements Optimizable.ByGradientValue {
     public static final String START_TOKEN = "<s>";
     public static final String END_TOKEN = "</s>";
     
     public final boolean gradCheck;
 
-	protected SimpleMatrix L, W, b1, U;
-	double b2;
+	protected SimpleMatrix L, W, b1, U, b2;
 	public int windowSize, wordSize, hiddenSize;
 	public double learningRate;
-	public double C = 1;
+	public double C = 0.0 / (150000+100);
   
+	protected List<Integer> currentYs = new ArrayList<Integer>(1000);
+	protected List<List<Integer>> currentWindowIndices = new ArrayList<List<Integer>>(1000);
   
 	protected Map<String, Integer> wordToNum;
+  
+	protected int numParams;
+	private List<SimpleMatrix> paramMatrices;
+	
+	protected LimitedMemoryBFGS optimizer;
 
 	public WindowModel(int _windowSize, int _hiddenSize, double _lr, SimpleMatrix L,
 	                   Map<String, Integer> wordToNum){
@@ -54,12 +63,17 @@ public class WindowModel {
       b1 = new SimpleMatrix(hiddenSize, 1);
       b1.zero();
       
-      //U = SimpleMatrix.random(hiddenSize, 1, -0.1, 0.1, rand);
-      U = new SimpleMatrix(hiddenSize, 1);
-      U.zero();
-      b2 = 0.0;
+      U = SimpleMatrix.random(hiddenSize, 1, -0.1, 0.1, rand);
+      //U = new SimpleMatrix(hiddenSize, 1);
+      //U.zero();
+      b2 = new SimpleMatrix(1,1);
+      b2.zero();
       
-      C = C/(W.getNumElements()+U.getNumElements());
+      paramMatrices = Arrays.asList(L, W, b1, U, b2);
+      
+      numParams = 0;
+      for (SimpleMatrix m: paramMatrices)
+        numParams += m.getNumElements();
 	}
 
 
@@ -67,38 +81,34 @@ public class WindowModel {
 	 * Simplest SGD training 
 	 */
 	public void train(List<Datum> trainData ){
+      int batchSize = 1000;
 	  int numTrainWords = trainData.size();
-      SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
+      
+      optimizer = new LimitedMemoryBFGS(this);
 
-      for (int epoch = 0; epoch < 10; epoch++) {
-        System.out.println("Iteration - " + epoch);
+      for (int epoch = 0; epoch < 1; epoch++) {
+        System.out.println("***** Iteration - " + epoch);
 
-        for (int i = 0; i < numTrainWords; i++) {
-          List<Integer> windowIndices = getWindowIndices(trainData, i);
-          String label = trainData.get(i).label;
-          int y = label.equals("PERSON") ? 1 : 0;
-
-          getWordVecs(trainExample, windowIndices);
-          PropagationResult res = forwardProp(trainExample, true, y, true);
+        for (int i = 0; i < numTrainWords; i+=batchSize) {
+          currentYs.clear();
+          currentWindowIndices.clear();
           
-          //System.out.println(res.cost + " " + res.h + " " + label);
-
-          if (gradCheck)
-            doGradCheck(res, trainExample, y);
-
-          // gradient descent
-          U = U.minus(res.gradU.scale(learningRate));
-          W = W.minus(res.gradW.scale(learningRate));
-          b1 = b1.minus(res.gradb1.scale(learningRate));
-          b2 -= res.gradb2 * learningRate;
-
-          // apply L update
-          SimpleMatrix LUpdate = res.gradL.scale(learningRate);
-          for (int j = 0; j < windowIndices.size(); j++) {
-            int index = windowIndices.get(j);
-            SimpleMatrix update = LUpdate.extractMatrix(j*L.numRows(), (j+1)*L.numRows(), 0, 1);
-            L.insertIntoThis(0, index, L.extractVector(false, index).minus(update));
+          for (int j = 0; j < batchSize && i+j < numTrainWords; j++) {
+            List<Integer> windowIndices = getWindowIndices(trainData, i+j);
+            String label = trainData.get(i+j).label;
+            int y = label.equals("PERSON") ? 1 : 0;
+  
+            currentYs.add(y);
+            currentWindowIndices.add(windowIndices);
           }
+          
+          if (gradCheck)
+            doGradCheck();
+          
+          optimizer.reset();
+          optimizer.optimize(20);
+          
+          System.out.println("Batch done: " + getValue());
         }
       }
 	}
@@ -140,6 +150,65 @@ public class WindowModel {
       System.out.println("F1 score - " + f1);
 	}
   
+    @Override
+    public double getValue() {
+      SimpleMatrix x = new SimpleMatrix(windowSize*wordSize, 1);
+      
+      int n = currentWindowIndices.size();
+      //double res = (C/2.0)*(SpecializedOps.elementSumSq(W.getMatrix()) + SpecializedOps.elementSumSq(U.getMatrix()));
+      double res = 0.0;
+      for (int i = 0; i < n; i++) {
+        getWordVecs(x, currentWindowIndices.get(i));
+        res -= forwardProp(x, false, currentYs.get(i), true).cost;
+      }
+      
+      return res/n;
+    }
+    
+    @Override
+    public void getValueGradient(double[] buffer) {
+      SimpleMatrix x = new SimpleMatrix(windowSize*wordSize, 1);
+      int n = currentWindowIndices.size();
+      
+      SimpleMatrix gradW = W.scale(-C/n);
+      SimpleMatrix gradU = U.scale(-C/n);
+      SimpleMatrix gradb1 = new SimpleMatrix(b1.numRows(), b1.numCols());
+      gradb1.zero();
+      SimpleMatrix gradb2 = new SimpleMatrix(b2.numRows(), b2.numCols());
+      gradb2.zero();
+      
+      
+      for (int i = 0; i < numParams; i++)
+        buffer[i] = 0.0;
+      
+      for (int i = 0; i < n; i++) {
+        List<Integer> windowIndices = currentWindowIndices.get(i);
+        getWordVecs(x, windowIndices);
+        
+        PropagationResult res = forwardProp(x, true, currentYs.get(i), false);
+        
+        CommonOps.addEquals(gradW.getMatrix(), res.gradW.getMatrix());
+        CommonOps.addEquals(gradU.getMatrix(), res.gradU.getMatrix());
+        CommonOps.addEquals(gradb1.getMatrix(), res.gradb1.getMatrix());
+        CommonOps.addEquals(gradb2.getMatrix(), res.gradb2.getMatrix());
+        
+        // L is a special case
+        for (int j = 0; j < windowIndices.size(); j++) {
+          int index = windowIndices.get(j);
+          
+          for (int k = 0; k < wordSize; k++)
+            buffer[L.getIndex(k, index)] -= res.gradL.get(j*wordSize+k) / n;
+        }
+        
+      }
+      
+      int idx = L.getNumElements();
+      List<SimpleMatrix> grads = Arrays.asList(gradW, gradb1, gradU, gradb2);
+      
+      for (SimpleMatrix m: grads)
+        for (int j = 0; j < m.getNumElements(); j++)
+          buffer[idx++] -= m.get(j) / n;
+    }
   
     public PropagationResult forwardProp(SimpleMatrix x, boolean calcGrad, int y, boolean calcCost) {
         // forward prop
@@ -148,7 +217,7 @@ public class WindowModel {
         applyTanh(a);
         
         double ua = U.dot(a);
-        double h = sigmoid(ua+b2);
+        double h = sigmoid(ua+b2.get(0));
         
         PropagationResult res = new PropagationResult(h);
         
@@ -163,94 +232,46 @@ public class WindowModel {
           CommonOps.elementMult(delta.getMatrix(), a_prime.getMatrix());
           
           res.gradb1 = delta;
-          res.gradb2 = coeff;
-          res.gradW = delta.mult(x.transpose()).plus(W.scale(C));
-          res.gradU = a.scale(coeff).plus(U.scale(C));
+          res.gradb2 = new SimpleMatrix(1,1);
+          res.gradb2.set(0, coeff);
+          res.gradW = delta.mult(x.transpose());
+          res.gradU = a.scale(coeff);
           res.gradL = delta.transpose().mult(W).transpose();
         }
         
         // calculate cost
         if (calcCost) {
-          res.cost = (-y)*Math.log(h)-(1-y)*Math.log(1-h) + 
-              (C/2.0)*(SpecializedOps.elementSumSq(W.getMatrix()) + SpecializedOps.elementSumSq(U.getMatrix()));
+          res.cost = (-y)*Math.log(h)-(1-y)*Math.log(1-h);
         }
         
         return res;
     }
     
-    public void doGradCheck(PropagationResult res, SimpleMatrix x, int y) {
-      double diff = 0.0;
-      final double eps = 1e-4;
+    public void doGradCheck() {
+      double eps = 1e-4;
+      double c1, c2;
+      double org;
       
-      double c1, c2, grad, graddiff, org;
+      double diff = 0;
+      double grad = 0;
+      double gradDiff = 0;
       
-      for (int i = 0; i < x.getNumElements(); i++) {
-        org = x.get(i);
-        x.set(i, org+eps);
-        c1 = forwardProp(x, false, y, true).cost;
-        x.set(i, org-eps);
-        c2 = forwardProp(x, false, y, true).cost;
+      double[] orgGrad = new double[numParams];
+      getValueGradient(orgGrad);
+      
+      for (int i = 0; i < numParams; i++) {
+        org = getParameter(i);
+        setParameter(i, org+eps);
+        c1 = getValue();
+        setParameter(i, org-eps);
+        c2 = getValue();
         
-        grad = (c1-c2) / (2*eps);
-        graddiff = Math.abs(res.gradL.get(i) - grad);
-        diff += graddiff * graddiff;
+        setParameter(i, org);
         
-        x.set(i, org);
+        grad = (c1-c2)/(2*eps);
+        gradDiff = Math.abs(orgGrad[i]-grad);
+        diff += gradDiff*gradDiff;
       }
-      
-      for (int i = 0; i < W.getNumElements(); i++) {
-        org = W.get(i);
-        W.set(i, org+eps);
-        c1 = forwardProp(x, false, y, true).cost;
-        W.set(i, org-eps);
-        c2 = forwardProp(x, false, y, true).cost;
-        
-        grad = (c1-c2) / (2*eps);
-        graddiff = Math.abs(res.gradW.get(i) - grad);
-        diff += graddiff * graddiff;
-        
-        W.set(i, org);
-      }
-      
-      for (int i = 0; i < U.getNumElements(); i++) {
-        org = U.get(i);
-        U.set(i, org+eps);
-        c1 = forwardProp(x, false, y, true).cost;
-        U.set(i, org-eps);
-        c2 = forwardProp(x, false, y, true).cost;
-        
-        grad = (c1-c2) / (2*eps);
-        graddiff = Math.abs(res.gradU.get(i) - grad);
-        diff += graddiff * graddiff;
-        
-        U.set(i, org);
-      }
-      
-      for (int i = 0; i < b1.getNumElements(); i++) {
-        org = b1.get(i);
-        b1.set(i, org+eps);
-        c1 = forwardProp(x, false, y, true).cost;
-        b1.set(i, org-eps);
-        c2 = forwardProp(x, false, y, true).cost;
-        
-        grad = (c1-c2) / (2*eps);
-        graddiff = Math.abs(res.gradb1.get(i) - grad);
-        diff += graddiff * graddiff;
-        
-        b1.set(i, org);
-      }
-      
-      org = b2;
-      b2 += eps;
-      c1 = forwardProp(x, false, y, true).cost;
-      b2 = org - eps;
-      c2 = forwardProp(x, false, y, true).cost;
-        
-      grad = (c1-c2) / (2*eps);
-      graddiff = Math.abs(res.gradb2 - grad);
-      diff += graddiff * graddiff;
-        
-      b2 = org;
       
       System.out.print(diff);
       System.out.println(diff < 1e-7 ? " Ok" : " Fail");
@@ -301,8 +322,7 @@ public class WindowModel {
   
 	public class PropagationResult {
       public double h;
-      public SimpleMatrix gradW, gradb1, gradL, gradU;
-      public double gradb2;
+      public SimpleMatrix gradW, gradb1, gradL, gradU, gradb2;
       public double cost;
       
       
@@ -310,4 +330,59 @@ public class WindowModel {
         this.h = h;
       }
 	}
+  
+	
+    @Override
+    public int getNumParameters() {
+      return numParams;
+    }
+    
+    @Override
+    public double getParameter(int index) {
+      int idx = 0;
+      
+      for (SimpleMatrix m: paramMatrices) {
+        if (idx+m.getNumElements() > index)
+          return m.get(index-idx);
+        idx += m.getNumElements();
+      }
+      
+      System.out.println("oops");
+      return Double.NaN;
+    }
+    
+    @Override
+    public void getParameters(double[] buffer) {
+      int idx = 0;
+      
+      for (SimpleMatrix m: paramMatrices) {
+        for (int i = 0; i < m.getNumElements(); i++)
+          buffer[idx++] = m.get(i);
+      }
+    }
+    
+    @Override
+    public void setParameter(int index, double value) {
+      int idx = 0;
+      
+      for (SimpleMatrix m: paramMatrices) {
+        if (idx+m.getNumElements() > index) {
+          m.set(index-idx, value);
+          return;
+        }
+        idx += m.getNumElements();
+      }
+      
+      System.out.println("oops");
+    }
+    
+    @Override
+    public void setParameters(double[] params) {
+      int idx = 0;
+      
+      for (SimpleMatrix m: paramMatrices) {
+        for (int i = 0; i < m.getNumElements(); i++)
+          m.set(i, params[idx++]);
+      }
+    }
 }
