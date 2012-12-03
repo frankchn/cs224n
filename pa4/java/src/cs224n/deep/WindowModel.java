@@ -17,9 +17,10 @@ public class WindowModel {
 
 	protected SimpleMatrix L, W, b1, U;
 	double b2;
-	//
 	public int windowSize, wordSize, hiddenSize;
 	public double learningRate;
+	public double C = 1e-5;
+  
   
 	protected Map<String, Integer> wordToNum;
 
@@ -64,7 +65,7 @@ public class WindowModel {
 	  int numTrainWords = trainData.size();
       SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
 
-      for (int epoch = 0; epoch < 100; epoch++) {
+      for (int epoch = 0; epoch < 10; epoch++) {
         System.out.println("Iteration - " + epoch);
 
         for (int i = 0; i < numTrainWords; i++) {
@@ -86,7 +87,7 @@ public class WindowModel {
 
           // apply L update
           SimpleMatrix LUpdate = res.gradL.scale(learningRate);
-          for (int j = 0; j < windowIndices.size(); i++) {
+          for (int j = 0; j < windowIndices.size(); j++) {
             int index = windowIndices.get(j);
             SimpleMatrix update = LUpdate.extractMatrix(j*L.numRows(), (j+1)*L.numRows(), 0, 1);
             L.insertIntoThis(0, index, L.extractVector(false, index).minus(update));
@@ -94,6 +95,11 @@ public class WindowModel {
         }
       }
 	}
+  
+	public void test(List<Datum> testData){
+		// TODO
+	}
+  
   
     // no weight decay yet
     public PropagationResult forwardProp(SimpleMatrix x, boolean calcGrad, int y) {
@@ -119,13 +125,14 @@ public class WindowModel {
           
           res.gradb1 = delta;
           res.gradb2 = coeff;
-          res.gradW = delta.mult(x.transpose());
-          res.gradU = a.scale(coeff);
+          res.gradW = delta.mult(x.transpose()).plus(W.scale(C));
+          res.gradU = a.scale(coeff).plus(U.scale(C));
           res.gradL = delta.transpose().mult(W).transpose();
         }
         
         // calculate cost
-        res.cost = (-y)*Math.log(h)-(1-y)*Math.log(1-h);
+        res.cost = (-y)*Math.log(h)-(1-y)*Math.log(1-h) + 
+            C*(CommonOps.elementSumAbs(W.getMatrix()) + CommonOps.elementSumAbs(U.getMatrix()));
         
         return res;
     }
@@ -208,10 +215,6 @@ public class WindowModel {
       System.out.println(diff < 1e-7 ? " Ok" : " Fail");
     }
 	
-	public void test(List<Datum> testData){
-		// TODO
-	}
-  
 	private void applyTanh(SimpleMatrix x) {
       int numElements = x.getNumElements();
       
