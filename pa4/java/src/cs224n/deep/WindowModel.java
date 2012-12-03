@@ -64,17 +64,35 @@ public class WindowModel {
 	  int numTrainWords = trainData.size();
       SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
 
-	  for (int i = 0; i < numTrainWords; i++) {
-        List<Integer> windowIndices = getWindowIndices(trainData, i);
-        String label = trainData.get(i).label;
-        int y = label.equals("PERSON") ? 1 : 0;
-        
-        getTrainExample(trainExample, windowIndices);
-        PropagationResult res = forwardProp(trainExample, true, y);
-        
-        if (gradCheck)
-          doGradCheck(res, trainExample, y);
-	  }
+      for (int epoch = 0; epoch < 100; epoch++) {
+        System.out.println("Iteration - " + epoch);
+
+        for (int i = 0; i < numTrainWords; i++) {
+          List<Integer> windowIndices = getWindowIndices(trainData, i);
+          String label = trainData.get(i).label;
+          int y = label.equals("PERSON") ? 1 : 0;
+
+          getTrainExample(trainExample, windowIndices);
+          PropagationResult res = forwardProp(trainExample, true, y);
+
+          if (gradCheck)
+            doGradCheck(res, trainExample, y);
+
+          // gradient descent
+          U.minus(res.gradU.scale(learningRate));
+          W.minus(res.gradW.scale(learningRate));
+          b1.minus(res.gradb1.scale(learningRate));
+          b2 -= res.gradb2 * learningRate;
+
+          // apply L update
+          SimpleMatrix LUpdate = res.gradL.scale(learningRate);
+          for (int j = 0; j < windowIndices.size(); i++) {
+            int index = windowIndices.get(j);
+            SimpleMatrix update = LUpdate.extractMatrix(j*L.numRows(), (j+1)*L.numRows(), 0, 1);
+            L.insertIntoThis(0, index, L.extractVector(false, index).minus(update));
+          }
+        }
+      }
 	}
   
     // no weight decay yet
