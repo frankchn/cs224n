@@ -7,3 +7,4 @@
 *.ear
 
 pa4/data
+.DS_Store

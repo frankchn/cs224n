@@ -1,0 +1,264 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass paper
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine natbib_authoryear
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 1in
+\topmargin 1in
+\rightmargin 1in
+\bottommargin 1in
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+CS224N Programming Assignment 4 Report
+\end_layout
+
+\begin_layout Author
+Daniel Chia (danchia@stanford.edu), Frank Chen (frankchn@stanford.edu)
+\end_layout
+
+\begin_layout Standard
+We used 
+\emph on
+three
+\emph default
+ late days for this assignment.
+ This assignment is submitted both electronically and in paper form on 
+\emph on
+December 8th, 2012 at 11am
+\emph default
+.
+\end_layout
+
+\begin_layout Part
+Introduction
+\end_layout
+
+\begin_layout Standard
+In Programming Assignment 4, we are asked to implement a neural network
+ for named entity recognition.
+ We provide derivations, descriptions of our methods, implementating details,
+ test results and discussion about the pros and cons of our implementation.
+\end_layout
+
+\begin_layout Standard
+Frank wrote the code to load in and preprocess the matrices given while
+ Daniel derived the equations and wrote the code for forward and backpropagation.
+ Frank worked on word vector visualization and the derivation of the equivalence
+ of the softmax classifier and the logistic regression classifier.
+ Frank and Daniel analyzed the results and wrote this report together.
+\end_layout
+
+\begin_layout Part
+Overview
+\end_layout
+
+\begin_layout Part
+Backpropagation Derivation
+\end_layout
+
+\begin_layout Part
+Implementation Details
+\end_layout
+
+\begin_layout Part
+Results Discussion
+\end_layout
+
+\begin_layout Part
+Network Analysis
+\end_layout
+
+\begin_layout Standard
+We have completed all three network analysis components (one required and
+ two extra).
+ 
+\end_layout
+
+\begin_layout Section
+Word Vector Visualization
+\end_layout
+
+\begin_layout Section
+Neural Network Extra Layer
+\end_layout
+
+\begin_layout Section
+Softmax Classifier Equivalence to Logistic Regression Classifier
+\end_layout
+
+\begin_layout Standard
+Given a softmax classifier with 
+\begin_inset Formula $k=2$
+\end_inset
+
+, the classifier will output the following
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+CS229 Lecture Notes 1 Page 26
+\end_layout
+
+\end_inset
+
+: 
+\begin_inset Formula 
+\begin{eqnarray*}
+h_{\theta}(x) & = & E[T(y)|x;\theta]\\
+ & = & \left[\begin{array}{c}
+\phi_{1}\\
+\phi_{2}
+\end{array}\right]\\
+ & = & \left[\begin{array}{c}
+\frac{\exp(\theta_{1}^{T}x)}{\exp(\theta_{1}^{T}x)+\exp(\theta_{2}^{T}x)}\\
+\frac{\exp(\theta_{2}^{T}x)}{\exp(\theta_{1}^{T}x)+\exp(\theta_{2}^{T}x)}
+\end{array}\right]
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We note that one of 
+\begin_inset Formula $\theta_{1}$
+\end_inset
+
+ and 
+\begin_inset Formula $\theta_{2}$
+\end_inset
+
+ is redundant and that we can subtract 
+\begin_inset Formula $\theta_{2}$
+\end_inset
+
+ from all the parameters, and letting 
+\begin_inset Formula $\theta'=\theta_{1}-\theta_{2}$
+\end_inset
+
+ (since 
+\begin_inset Formula $\theta_{2}-\theta_{2}=0$
+\end_inset
+
+), we thus have:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+h_{\theta}(x) & = & \left[\begin{array}{c}
+\frac{\exp((\theta_{1}-\theta_{2})^{T}x)}{\exp((\theta_{1}-\theta_{2})^{T}x)+1}\\
+\frac{1}{\exp((\theta_{1}-\theta_{2})^{T}x)+1}
+\end{array}\right]\\
+ & = & \left[\begin{array}{c}
+\frac{\exp(\theta'^{T}x)}{\exp(\theta'^{T}x)+1}\\
+\frac{1}{\exp(\theta'^{T}x)+1}
+\end{array}\right]\\
+ & = & \left[\begin{array}{c}
+1-\frac{1}{\exp(\theta'^{T}x)+1}\\
+\frac{1}{\exp(\theta'^{T}x)+1}
+\end{array}\right]
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We can now observe that the output of the one of the two classes is exactly
+ equivalent to the predictions of the logistic regression hypothesis function
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+CS229 Lecture Notes 1 Page 16
+\end_layout
+
+\end_inset
+
+: 
+\begin_inset Formula $h_{\theta}(x)=g(\theta^{T}x)=\frac{1}{1+\exp(-\theta^{T}x)}$
+\end_inset
+
+ when 
+\begin_inset Formula $\theta'=\theta$
+\end_inset
+
+.
+ The other class is obviously 
+\begin_inset Formula $1-h_{\theta}(x)$
+\end_inset
+
+.
+ Therefore, logistic regression is a special case of softmax regression
+ where 
+\begin_inset Formula $k=2$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section*
+References
+\end_layout
+
+\end_body
+\end_document
