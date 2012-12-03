@@ -4,6 +4,7 @@ import java.util.*;
 
 import org.ejml.data.*;
 import org.ejml.ops.CommonOps;
+import org.ejml.ops.SpecializedOps;
 import org.ejml.simple.*;
 
 
@@ -19,7 +20,7 @@ public class WindowModel {
 	double b2;
 	public int windowSize, wordSize, hiddenSize;
 	public double learningRate;
-	public double C = 1e-5;
+	public double C = 0;
   
   
 	protected Map<String, Integer> wordToNum;
@@ -53,8 +54,12 @@ public class WindowModel {
       b1 = new SimpleMatrix(hiddenSize, 1);
       b1.zero();
       
-      U = SimpleMatrix.random(hiddenSize, 1, -0.1, 0.1, rand);
+      //U = SimpleMatrix.random(hiddenSize, 1, -0.1, 0.1, rand);
+      U = new SimpleMatrix(hiddenSize, 1);
+      U.zero();
       b2 = 0.0;
+      
+      C = C/(W.getNumElements()+U.getNumElements());
 	}
 
 
@@ -65,7 +70,7 @@ public class WindowModel {
 	  int numTrainWords = trainData.size();
       SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
 
-      for (int epoch = 0; epoch < 10; epoch++) {
+      for (int epoch = 0; epoch < 2; epoch++) {
         System.out.println("Iteration - " + epoch);
 
         for (int i = 0; i < numTrainWords; i++) {
@@ -73,8 +78,8 @@ public class WindowModel {
           String label = trainData.get(i).label;
           int y = label.equals("PERSON") ? 1 : 0;
 
-          getTrainExample(trainExample, windowIndices);
-          PropagationResult res = forwardProp(trainExample, true, y);
+          getWordVecs(trainExample, windowIndices);
+          PropagationResult res = forwardProp(trainExample, true, y, false);
 
           if (gradCheck)
             doGradCheck(res, trainExample, y);
@@ -97,12 +102,42 @@ public class WindowModel {
 	}
   
 	public void test(List<Datum> testData){
-		// TODO
+	  int numWords = testData.size();
+      SimpleMatrix x = new SimpleMatrix(windowSize*wordSize, 1);
+      
+      int truePositives = 0;
+      int predictedPositives = 0;
+      int goldPositives = 0;      
+	  
+	  for (int i = 0; i < numWords; i++) {
+        String label = testData.get(i).label;
+        
+        List<Integer> windowIndices = getWindowIndices(testData, i);
+        getWordVecs(x, windowIndices);
+        PropagationResult res = forwardProp(x, false, 0, false);
+        
+        String prediction = (res.h >= 0.5) ? "PERSON" : "O";
+        
+        if (prediction.equals("PERSON")) {
+          predictedPositives++;
+          
+          if (label.equals("PERSON"))
+            truePositives++;
+        }
+        
+        if (label.equals("PERSON"))
+          goldPositives++;
+	  }
+    
+	  double precision = (double)truePositives/predictedPositives;
+	  double recall = (double)truePositives/goldPositives;
+      double f1 = (2.0*precision*recall)/(precision+recall);
+      
+      System.out.println("F1 score - " + f1);
 	}
   
   
-    // no weight decay yet
-    public PropagationResult forwardProp(SimpleMatrix x, boolean calcGrad, int y) {
+    public PropagationResult forwardProp(SimpleMatrix x, boolean calcGrad, int y, boolean calcCost) {
         // forward prop
         SimpleMatrix z = W.mult(x).plus(b1);
         SimpleMatrix a = z.copy();
@@ -131,8 +166,10 @@ public class WindowModel {
         }
         
         // calculate cost
-        res.cost = (-y)*Math.log(h)-(1-y)*Math.log(1-h) + 
-            C*(CommonOps.elementSumAbs(W.getMatrix()) + CommonOps.elementSumAbs(U.getMatrix()));
+        if (calcCost) {
+          res.cost = (-y)*Math.log(h)-(1-y)*Math.log(1-h) + 
+              (C/2.0)*(SpecializedOps.elementSumSq(W.getMatrix()) + SpecializedOps.elementSumSq(U.getMatrix()));
+        }
         
         return res;
     }
@@ -146,9 +183,9 @@ public class WindowModel {
       for (int i = 0; i < x.getNumElements(); i++) {
         org = x.get(i);
         x.set(i, org+eps);
-        c1 = forwardProp(x, false, y).cost;
+        c1 = forwardProp(x, false, y, true).cost;
         x.set(i, org-eps);
-        c2 = forwardProp(x, false, y).cost;
+        c2 = forwardProp(x, false, y, true).cost;
         
         grad = (c1-c2) / (2*eps);
         graddiff = Math.abs(res.gradL.get(i) - grad);
@@ -160,9 +197,9 @@ public class WindowModel {
       for (int i = 0; i < W.getNumElements(); i++) {
         org = W.get(i);
         W.set(i, org+eps);
-        c1 = forwardProp(x, false, y).cost;
+        c1 = forwardProp(x, false, y, true).cost;
         W.set(i, org-eps);
-        c2 = forwardProp(x, false, y).cost;
+        c2 = forwardProp(x, false, y, true).cost;
         
         grad = (c1-c2) / (2*eps);
         graddiff = Math.abs(res.gradW.get(i) - grad);
@@ -174,9 +211,9 @@ public class WindowModel {
       for (int i = 0; i < U.getNumElements(); i++) {
         org = U.get(i);
         U.set(i, org+eps);
-        c1 = forwardProp(x, false, y).cost;
+        c1 = forwardProp(x, false, y, true).cost;
         U.set(i, org-eps);
-        c2 = forwardProp(x, false, y).cost;
+        c2 = forwardProp(x, false, y, true).cost;
         
         grad = (c1-c2) / (2*eps);
         graddiff = Math.abs(res.gradU.get(i) - grad);
@@ -188,9 +225,9 @@ public class WindowModel {
       for (int i = 0; i < b1.getNumElements(); i++) {
         org = b1.get(i);
         b1.set(i, org+eps);
-        c1 = forwardProp(x, false, y).cost;
+        c1 = forwardProp(x, false, y, true).cost;
         b1.set(i, org-eps);
-        c2 = forwardProp(x, false, y).cost;
+        c2 = forwardProp(x, false, y, true).cost;
         
         grad = (c1-c2) / (2*eps);
         graddiff = Math.abs(res.gradb1.get(i) - grad);
@@ -201,9 +238,9 @@ public class WindowModel {
       
       org = b2;
       b2 += eps;
-      c1 = forwardProp(x, false, y).cost;
+      c1 = forwardProp(x, false, y, true).cost;
       b2 = org - eps;
-      c2 = forwardProp(x, false, y).cost;
+      c2 = forwardProp(x, false, y, true).cost;
         
       grad = (c1-c2) / (2*eps);
       graddiff = Math.abs(res.gradb2 - grad);
@@ -228,7 +265,7 @@ public class WindowModel {
       return 1.0 / (1 + Math.exp(-x));
 	}
   
-    private void getTrainExample(SimpleMatrix x, List<Integer> indices) {
+    private void getWordVecs(SimpleMatrix x, List<Integer> indices) {
       for (int i = 0; i < indices.size(); i++) {
         x.insertIntoThis(i*wordSize, 0, L.extractVector(false, indices.get(i)));
       }
