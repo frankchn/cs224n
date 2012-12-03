@@ -20,7 +20,7 @@ public class WindowModel {
 	double b2;
 	public int windowSize, wordSize, hiddenSize;
 	public double learningRate;
-	public double C = 0;
+	public double C = 1;
   
   
 	protected Map<String, Integer> wordToNum;
@@ -70,7 +70,7 @@ public class WindowModel {
 	  int numTrainWords = trainData.size();
       SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
 
-      for (int epoch = 0; epoch < 2; epoch++) {
+      for (int epoch = 0; epoch < 10; epoch++) {
         System.out.println("Iteration - " + epoch);
 
         for (int i = 0; i < numTrainWords; i++) {
@@ -135,6 +135,8 @@ public class WindowModel {
 	  double recall = (double)truePositives/goldPositives;
       double f1 = (2.0*precision*recall)/(precision+recall);
       
+      System.out.println("Precision - " + precision);
+      System.out.println("Recall - " + recall);
       System.out.println("F1 score - " + f1);
 	}
   
