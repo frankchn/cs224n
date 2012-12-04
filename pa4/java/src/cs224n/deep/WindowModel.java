@@ -1,4 +1,8 @@
 package cs224n.deep;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.*;
 import java.util.*;
 
@@ -22,7 +26,7 @@ public class WindowModel {
 	public int windowSize, wordSize, hiddenSize;
 	public double l_alpha, l_beta;
 	public double C = 1;
-  
+    public int iterations = 0;
   
 	protected Map<String, Integer> wordToNum;
 
@@ -72,7 +76,7 @@ public class WindowModel {
 	  int numTrainWords = trainData.size();
       SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
 
-      for (int epoch = 0; epoch < 20; epoch++) {
+      for (int epoch = 0; epoch < iterations; epoch++) {
         System.out.println("Iteration - " + epoch);
         
         double learningRate = l_alpha / (l_beta + epoch);
@@ -130,26 +134,46 @@ public class WindowModel {
       int truePositives = 0;
       int predictedPositives = 0;
       int goldPositives = 0;      
+      
+      System.out.println("Testing starts...");
 	  
-	  for (int i = 0; i < numWords; i++) {
-        String label = testData.get(i).label;
-        
-        List<Integer> windowIndices = getWindowIndices(testData, i);
-        getWordVecs(x, windowIndices);
-        PropagationResult res = forwardProp(x, false, 0, false);
-        
-        String prediction = (res.h >= 0.5) ? "PERSON" : "O";
-        
-        if (prediction.equals("PERSON")) {
-          predictedPositives++;
-          
-          if (label.equals("PERSON"))
-            truePositives++;
-        }
-        
-        if (label.equals("PERSON"))
-          goldPositives++;
-	  }
+      try {
+      
+    	  PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("dev_results", false)));
+    	  
+		  for (int i = 0; i < numWords; i++) {
+	        String label = testData.get(i).label;
+	        
+	        if(label.equals(">>>BLANKLINE<<<")) {
+	        	out.format("\n");
+	        }
+	        
+	        List<Integer> windowIndices = getWindowIndices(testData, i);
+	        getWordVecs(x, windowIndices);
+	        PropagationResult res = forwardProp(x, false, 0, false);
+	        
+	        String prediction = (res.h >= 0.5) ? "PERSON" : "O";
+	        
+	        out.format("%s\t%s\n", label, prediction);
+	        
+	        if (prediction.equals("PERSON")) {
+	          predictedPositives++;
+	          
+	          if (label.equals("PERSON"))
+	            truePositives++;
+	        } else {
+	          
+	        }
+	        
+	        if (label.equals("PERSON"))
+	          goldPositives++;
+		  }
+	  
+		  out.close();
+		  
+      } catch (IOException e) {
+    	  
+      }
     
 	  double precision = (double)truePositives/predictedPositives;
 	  double recall = (double)truePositives/goldPositives;

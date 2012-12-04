@@ -34,12 +34,17 @@ public class FeatureFactory {
 		List<Datum> data = new ArrayList<Datum>();
 		BufferedReader in = new BufferedReader(new FileReader(filename));
 		for (String line = in.readLine(); line != null; line = in.readLine()) {
+			String word;
+			String label;
+			
 			if (line.trim().length() == 0) {
-				continue;
+				word = ">>>BLANKLINE<<<";
+				label = "O";
+			} else {
+				String[] bits = line.split("\\s+");
+				word = bits[0];
+				label = bits[1];
 			}
-			String[] bits = line.split("\\s+");
-			String word = bits[0];
-			String label = bits[1];
 
 			Datum datum = new Datum(word, label);
 			data.add(datum);
