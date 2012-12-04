@@ -2,6 +2,7 @@ package cs224n.deep;
 import java.lang.*;
 import java.util.*;
 
+import org.apache.commons.math.util.FastMath;
 import org.ejml.data.*;
 import org.ejml.ops.CommonOps;
 import org.ejml.ops.SpecializedOps;
@@ -19,7 +20,7 @@ public class WindowModel {
 	protected SimpleMatrix L, W, b1, U;
 	double b2;
 	public int windowSize, wordSize, hiddenSize;
-	public double learningRate;
+	public double l_alpha, l_beta;
 	public double C = 1;
   
   
@@ -37,7 +38,8 @@ public class WindowModel {
       
 	  windowSize = _windowSize;
 	  wordSize = L.numRows();
-      learningRate = _lr;
+      l_alpha = 0.05;
+      l_beta = 20;
       hiddenSize = _hiddenSize;
       
       this.gradCheck = gradCheck;
@@ -70,8 +72,11 @@ public class WindowModel {
 	  int numTrainWords = trainData.size();
       SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
 
-      for (int epoch = 0; epoch < 10; epoch++) {
+      for (int epoch = 0; epoch < 20; epoch++) {
         System.out.println("Iteration - " + epoch);
+        
+        double learningRate = l_alpha / (l_beta + epoch);
+        System.out.println(learningRate);
 
         for (int i = 0; i < numTrainWords; i++) {
           List<Integer> windowIndices = getWindowIndices(trainData, i);
@@ -100,6 +105,21 @@ public class WindowModel {
             L.insertIntoThis(0, index, L.extractVector(false, index).minus(update));
           }
         }
+        
+        // calculate current objective
+        double obj = 0;
+        for (int i = 0; i < numTrainWords; i++) {
+          List<Integer> windowIndices = getWindowIndices(trainData, i);
+          String label = trainData.get(i).label;
+          int y = label.equals("PERSON") ? 1 : 0;
+
+          getWordVecs(trainExample, windowIndices);
+          PropagationResult res = forwardProp(trainExample, false, y, true);
+          
+          obj += res.cost;
+        }
+        
+        System.out.println("Objective: " + obj);
       }
 	}
   
@@ -261,7 +281,7 @@ public class WindowModel {
       
       for (int i = 0; i < numElements; i++) {
         double elem = x.get(i);
-        x.set(i, Math.tanh(elem));
+        x.set(i, FastMath.tanh(elem));
       }
 	}
   
