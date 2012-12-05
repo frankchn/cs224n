@@ -127,7 +127,7 @@ public class WindowModel {
       }
 	}
   
-	public void test(List<Datum> testData){
+	public void test(List<Datum> testData, boolean outputGold){
 	  int numWords = testData.size();
       SimpleMatrix x = new SimpleMatrix(windowSize*wordSize, 1);
       
@@ -154,7 +154,11 @@ public class WindowModel {
 	        
 	        String prediction = (res.h >= 0.5) ? "PERSON" : "O";
 	        
-	        out.format("%s\t%s\n", label, prediction);
+	        if(outputGold) {
+	        	out.format("%s\t%s\t%s\n", testData.get(i).word, testData.get(i).label, prediction);
+	        } else {
+	        	out.format("%s\t%s\n", testData.get(i).word, prediction);
+	        }
 	        
 	        if (prediction.equals("PERSON")) {
 	          predictedPositives++;

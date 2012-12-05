@@ -109,15 +109,23 @@ Overview
 \end_layout
 
 \begin_layout Part
-Backpropagation Derivation
+Feedforward and Cost Functions
 \end_layout
 
 \begin_layout Part
-Implementation Details
+Gradients
+\end_layout
+
+\begin_layout Section
+Cost Function of Neural Networks
+\end_layout
+
+\begin_layout Section
+Regularized Cost Functions
 \end_layout
 
 \begin_layout Part
-Results Discussion
+SGD Training and Implementation
 \end_layout
 
 \begin_layout Part
@@ -254,10 +262,6 @@ CS229 Lecture Notes 1 Page 16
 \end_inset
 
 .
-\end_layout
-
-\begin_layout Section*
-References
 \end_layout
 
 \end_body

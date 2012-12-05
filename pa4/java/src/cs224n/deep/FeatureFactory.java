@@ -49,6 +49,7 @@ public class FeatureFactory {
 			Datum datum = new Datum(word, label);
 			data.add(datum);
 		}
+		in.close();
 
 		return data;
 	}
