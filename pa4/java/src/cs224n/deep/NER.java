@@ -24,12 +24,23 @@ public class NER {
 		SimpleMatrix allVecs= FeatureFactory.readWordVectors("../data/wordVectors.txt");
     
 		// initialize model 
-		WindowModel model = new WindowModel(5, 100, 0.001, allVecs, FeatureFactory.wordToNum);
-		model.initWeights();
-	
-		//TODO: Implement those two functions
-		model.train(trainData);
-		model.test(trainData);
-		model.test(testData);
+		int[] wschoices = {3, 5, 7};
+		int[] hschoices = {50, 100, 200};
+		double[] lrchoices = {0.0002, 0.001, 0.005};
+		
+		for(int ws : wschoices) {
+			for(int hs : hschoices) {
+				for(double lr : lrchoices) {
+					System.out.println("Window size: " + ws + ", Hidden size: " + hs + ", Learning Rate: " + lr);
+					
+					WindowModel model = new WindowModel(ws, hs, lr, allVecs, FeatureFactory.wordToNum);
+					model.initWeights();
+				
+					model.train(trainData);
+					model.test(trainData);
+					model.test(testData);
+				}
+			}
+		}
     }
 }

@@ -26,7 +26,7 @@ public class WindowModel {
 	public int windowSize, wordSize, hiddenSize;
 	public double l_alpha, l_beta;
 	public double C = 1;
-    public int iterations = 0;
+    public int iterations = 20;
   
 	protected Map<String, Integer> wordToNum;
 
