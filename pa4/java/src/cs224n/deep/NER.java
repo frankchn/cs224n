@@ -33,7 +33,7 @@ public class NER {
 				for(double lr : lrchoices) {
 					System.out.println("Window size: " + ws + ", Hidden size: " + hs + ", Learning Rate: " + lr);
 					
-					WindowModel model = new WindowModel(ws, hs, lr, allVecs, FeatureFactory.wordToNum);
+					WindowModel model = new WindowModel(ws, hs, lr, 20.0, allVecs, FeatureFactory.wordToNum);
 					model.initWeights();
 				
 					model.train(trainData);

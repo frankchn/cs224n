@@ -30,20 +30,20 @@ public class WindowModel {
   
 	protected Map<String, Integer> wordToNum;
 
-	public WindowModel(int _windowSize, int _hiddenSize, double _lr, SimpleMatrix L,
+	public WindowModel(int _windowSize, int _hiddenSize, double l_alpha, double l_beta, SimpleMatrix L,
 	                   Map<String, Integer> wordToNum){
-      this(_windowSize, _hiddenSize, _lr, L, wordToNum, false);
+      this(_windowSize, _hiddenSize, l_alpha, l_beta, L, wordToNum, false);
 	}
   
-	public WindowModel(int _windowSize, int _hiddenSize, double _lr, SimpleMatrix L,
+	public WindowModel(int _windowSize, int _hiddenSize, double l_alpha, double l_beta, SimpleMatrix L,
 	                   Map<String, Integer> wordToNum, boolean gradCheck){
       this.L = L;
       this.wordToNum = wordToNum;
       
 	  windowSize = _windowSize;
 	  wordSize = L.numRows();
-      l_alpha = 0.05;
-      l_beta = 20;
+      this.l_alpha = l_alpha; //0.05;
+      this.l_beta = l_beta; //20;
       hiddenSize = _hiddenSize;
       
       this.gradCheck = gradCheck;
