@@ -25,8 +25,8 @@ public class NER {
     
 		// initialize model 
 		int[] wschoices = {7};
-		int[] hschoices = {50, 100, 200};
-		double[] lrchoices = {0.0002, 0.001, 0.005};
+		int[] hschoices = {50};
+		double[] lrchoices = {0.005};
 		
 		for(int ws : wschoices) {
 			for(int hs : hschoices) {

@@ -85,7 +85,7 @@ December 8th, 2012 at 11am
 .
 \end_layout
 
-\begin_layout Part
+\begin_layout Section
 Introduction
 \end_layout
 
@@ -104,31 +104,27 @@ Frank wrote the code to load in and preprocess the matrices given while
  Frank and Daniel analyzed the results and wrote this report together.
 \end_layout
 
-\begin_layout Part
-Overview
-\end_layout
-
-\begin_layout Part
+\begin_layout Section
 Feedforward and Cost Functions
 \end_layout
 
-\begin_layout Part
+\begin_layout Subsection
 Gradients
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 Cost Function of Neural Networks
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 Regularized Cost Functions
 \end_layout
 
-\begin_layout Part
+\begin_layout Section
 SGD Training and Implementation
 \end_layout
 
-\begin_layout Part
+\begin_layout Section
 Network Analysis
 \end_layout
 
@@ -138,15 +134,76 @@ We have completed all three network analysis components (one required and
  
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
+Hyperparameter Variation
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename tune_f1_0.0002.png
+	width 2.25in
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename tune_f1_0.001.png
+	width 2.25in
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename tune_f1_0.005.png
+	width 2.25in
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We have used token-based development F1-scores to tune our hyperparameters
+ rather than entity-level evaluation and we varied the window size from
+ 3 to 7 in steps of 2, number of neurons in the hidden layer between 50
+ and 200, and the learning rate 
+\begin_inset Formula $\alpha$
+\end_inset
+
+ between 0.0002 and 0.005.
+ We have plotted the results of the graphs as above.
+ All our training is done with 
+\begin_inset Formula $C=20$
+\end_inset
+
+ (i.e.
+ 20 iterations).
+\end_layout
+
+\begin_layout Standard
+From our graph, we can see that performance on the dev-test decreases when
+ the window size is increased beyond 5 uness either 
+\begin_inset Formula $\alpha=0.0002$
+\end_inset
+
+ or the size of the hidden layer is 50.
+ We observed a similar trend in the F1 scores on our training set as well.
+ 
+\end_layout
+
+\begin_layout Standard
+(## EXPLAIN ##)
+\end_layout
+
+\begin_layout Subsection
 Word Vector Visualization
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 Neural Network Extra Layer
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
 Softmax Classifier Equivalence to Logistic Regression Classifier
 \end_layout
 
