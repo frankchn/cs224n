@@ -196,11 +196,108 @@ From our graph, we can see that performance on the dev-test decreases when
 \end_layout
 
 \begin_layout Subsection
-Word Vector Visualization
+Error Analysis
+\end_layout
+
+\begin_layout Subsubsection
+Misclassification of 
+\begin_inset Formula $\texttt{O}$
+\end_inset
+
+ as 
+\begin_inset Formula $\texttt{PERSON}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Proper Nouns
+\end_layout
+
+\begin_layout Standard
+X
+\end_layout
+
+\begin_layout Paragraph
+Dates and Numbers
+\end_layout
+
+\begin_layout Standard
+X
+\end_layout
+
+\begin_layout Paragraph
+Capitalized Words
+\end_layout
+
+\begin_layout Standard
+X
+\end_layout
+
+\begin_layout Paragraph
+Pronouns
+\end_layout
+
+\begin_layout Standard
+X
+\end_layout
+
+\begin_layout Subsubsection
+Misclassification of 
+\begin_inset Formula $\texttt{PERSON}$
+\end_inset
+
+ as 
+\begin_inset Formula $\texttt{O}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Non-English Names
+\end_layout
+
+\begin_layout Standard
+X
+\end_layout
+
+\begin_layout Paragraph
+Usage of Only Last Names
+\end_layout
+
+\begin_layout Standard
+X
+\end_layout
+
+\begin_layout Paragraph
+Shorted Names (e.g.
+ P., J.)
+\end_layout
+
+\begin_layout Standard
+X
+\end_layout
+
+\begin_layout Subsubsection
+Classifying only parts of Entities
+\end_layout
+
+\begin_layout Paragraph
+Classification of Titles
+\end_layout
+
+\begin_layout Standard
+Cardinal/PERSON Wolsey/PERSON 
+\end_layout
+
+\begin_layout Standard
+General/PERSON Kutuzov/PERSON
 \end_layout
 
 \begin_layout Subsection
-Neural Network Extra Layer
+Word Vector Visualization
 \end_layout
 
 \begin_layout Subsection
