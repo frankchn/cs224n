@@ -128,12 +128,6 @@ SGD Training and Implementation
 Network Analysis
 \end_layout
 
-\begin_layout Standard
-We have completed all three network analysis components (one required and
- two extra).
- 
-\end_layout
-
 \begin_layout Subsection
 Hyperparameter Variation
 \end_layout
@@ -243,8 +237,9 @@ Mercedes-Benz
 
 .
  These words and phrases often have the same characteristics (including
- the frequency of appearance and capitalization).
- XXX
+ the frequency of appearance and capitalization) and appear in the same
+ contexts as phrases refering to individuals.
+ This will throw our algorithms off.
 \end_layout
 
 \begin_layout Paragraph
@@ -252,7 +247,18 @@ Dates and Numbers
 \end_layout
 
 \begin_layout Standard
-X
+We are also classifying dates and numbers (e.g.
+ 1996-08-31, 3, 2) as person entities.
+ We could easily remedy this by forcing the classification of any entity
+ with numbers in them as 
+\begin_inset Formula $\texttt{O}$
+\end_inset
+
+ instead of 
+\begin_inset Formula $\texttt{PERSON}$
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Paragraph
@@ -324,7 +330,23 @@ Non-English Names
 \end_layout
 
 \begin_layout Standard
-X
+Our system often misclassifies non-English first and last names as 
+\begin_inset Formula $\texttt{O}$
+\end_inset
+
+ rather than 
+\begin_inset Formula $\texttt{PERSON}$
+\end_inset
+
+.
+ We believe this is because we have not seen the word in the wordVector
+ or the training data before, and we have to use the UNK token as a substitute
+ for the word itself and only context to figure out whether the current
+ word is a 
+\begin_inset Formula $\texttt{PERSON}$
+\end_inset
+
+ reference or not.
 \end_layout
 
 \begin_layout Paragraph
@@ -332,7 +354,22 @@ Usage of Only Last Names
 \end_layout
 
 \begin_layout Standard
-X
+In some instances (e.g.
+ ...in Gulf await 
+\emph on
+Clinton
+\emph default
+ order..., 
+\emph on
+Wang
+\emph default
+ was jailed for....), our neural network did not manage to identify the single
+ token as a person entity.
+ We hypothesize this is due to the context of the surrounding tokens.
+ These words may only have activations which cross the threshold when certain
+ other words (e.g.
+ other similar names -- such as Bill Clinton) are in the same context as
+ it.
 \end_layout
 
 \begin_layout Paragraph
@@ -343,7 +380,30 @@ Shorted Names (e.g.
 \begin_layout Standard
 Shortened names such as P.
  and J.
- will not be 
+ is not correctly classified as part of person.
+ We believe that this is because the tokens that form these shortened names
+ (e.g.
+ 
+\begin_inset Quotes eld
+\end_inset
+
+P.
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+W.
+\begin_inset Quotes erd
+\end_inset
+
+, etc...) are also part of acronyms in our training text that are not referring
+ to persons.
+ This overloaded usage of the token may well throw our simple classifier
+ off, especially when the training data does not contain any shortened names
+ with that specific token.
 \end_layout
 
 \begin_layout Subsubsection
@@ -388,10 +448,76 @@ General Kutuzov
 \end_inset
 
  are part of the named entity as well.
+ We believe that the correctness of our results versus the gold solution
+ is debatable.
+ We believe that marking 
+\begin_inset Quotes eld
+\end_inset
+
+Cardinal Wolsey
+\begin_inset Quotes erd
+\end_inset
+
+ as an entity rather than just 
+\begin_inset Quotes eld
+\end_inset
+
+Wolsey
+\begin_inset Quotes erd
+\end_inset
+
+ is equally correct since 
+\begin_inset Quotes eld
+\end_inset
+
+Cardinal Wolsey
+\begin_inset Quotes erd
+\end_inset
+
+ refers to a person.
 \end_layout
 
 \begin_layout Subsection
 Word Vector Visualization
+\end_layout
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename vector_before.png
+	lyxscale 20
+	scale 10
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename vector_after.png
+	lyxscale 20
+	scale 10
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We have also visualized a random sampling of L vectors before and after
+ training using the t-SNE algorithm, as suggested by the assignment handout.
+ 
+\end_layout
+
+\begin_layout Standard
+The L vectors before and after training does not seem to have much difference
+ at first glance.
+ However, we note that the center area is smaller in the L vector after
+ training, and there are more pronounced clusters in the L-vectors after
+ training than before.
+ The center cluster of individual vectors were also smaller than before
+ training.
+\end_layout
+
+\begin_layout Standard
+We believe this is due to (## EXPLAIN ##)
 \end_layout
 
 \begin_layout Subsection
