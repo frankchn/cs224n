@@ -212,11 +212,39 @@ Misclassification of
 \end_layout
 
 \begin_layout Paragraph
-Proper Nouns
+Place Names and other Proper Nouns
 \end_layout
 
 \begin_layout Standard
-X
+There were significant instances of misclassification of proper nouns, such
+ as 
+\begin_inset Quotes eld
+\end_inset
+
+National Observatory
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+Korea
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+Mercedes-Benz
+\begin_inset Quotes erd
+\end_inset
+
+.
+ These words and phrases often have the same characteristics (including
+ the frequency of appearance and capitalization).
+ XXX
 \end_layout
 
 \begin_layout Paragraph
@@ -228,19 +256,55 @@ X
 \end_layout
 
 \begin_layout Paragraph
-Capitalized Words
-\end_layout
-
-\begin_layout Standard
-X
-\end_layout
-
-\begin_layout Paragraph
 Pronouns
 \end_layout
 
 \begin_layout Standard
-X
+Finally, classification of 
+\begin_inset Quotes eld
+\end_inset
+
+I
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\begin_inset Quotes eld
+\end_inset
+
+He
+\begin_inset Quotes erd
+\end_inset
+
+ or 
+\begin_inset Quotes eld
+\end_inset
+
+She
+\begin_inset Quotes erd
+\end_inset
+
+ as persons are also common.
+ We believe that as these pronouns often appear in the same location as
+ people names, the algorithm would be confused.
+ An easy fix for this would merely be adding the list of proper nouns and
+ forcing the classification of any proper noun detected as 
+\begin_inset Quotes eld
+\end_inset
+
+O
+\begin_inset Quotes erd
+\end_inset
+
+ rather than 
+\begin_inset Quotes eld
+\end_inset
+
+PERSON.
+\begin_inset Quotes erd
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
@@ -277,7 +341,9 @@ Shorted Names (e.g.
 \end_layout
 
 \begin_layout Standard
-X
+Shortened names such as P.
+ and J.
+ will not be 
 \end_layout
 
 \begin_layout Subsubsection
@@ -289,11 +355,39 @@ Classification of Titles
 \end_layout
 
 \begin_layout Standard
-Cardinal/PERSON Wolsey/PERSON 
-\end_layout
+The algorithm believed that the words 
+\begin_inset Quotes eld
+\end_inset
 
-\begin_layout Standard
-General/PERSON Kutuzov/PERSON
+Cardinal
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+General
+\begin_inset Quotes erd
+\end_inset
+
+ in 
+\begin_inset Quotes eld
+\end_inset
+
+Cardinal Wolsey
+\begin_inset Quotes erd
+\end_inset
+
+ and 
+\begin_inset Quotes eld
+\end_inset
+
+General Kutuzov
+\begin_inset Quotes erd
+\end_inset
+
+ are part of the named entity as well.
 \end_layout
 
 \begin_layout Subsection

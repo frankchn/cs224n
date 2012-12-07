@@ -24,9 +24,9 @@ public class NER {
 		SimpleMatrix allVecs= FeatureFactory.readWordVectors("../data/wordVectors.txt");
     
 		// initialize model 
-		int[] wschoices = {7};
-		int[] hschoices = {50};
-		double[] lrchoices = {0.005};
+		int[] wschoices = {5};
+		int[] hschoices = {100};
+		double[] lrchoices = {0.05};
 		
 		for(int ws : wschoices) {
 			for(int hs : hschoices) {
@@ -37,8 +37,8 @@ public class NER {
 					model.initWeights();
 				
 					model.train(trainData);
-					model.test(trainData, false);
-					model.test(testData, false);
+					model.test(trainData, true);
+					model.test(testData, true);
 				}
 			}
 		}

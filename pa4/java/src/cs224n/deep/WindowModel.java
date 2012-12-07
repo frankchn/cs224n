@@ -26,7 +26,7 @@ public class WindowModel {
 	public int windowSize, wordSize, hiddenSize;
 	public double l_alpha, l_beta;
 	public double C = 1;
-    public int iterations = 20;
+    public int iterations = 1;
   
 	protected Map<String, Integer> wordToNum;
 
@@ -76,6 +76,12 @@ public class WindowModel {
 	  int numTrainWords = trainData.size();
       SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
 
+      try {
+		L.transpose().saveToFileCSV("tsne/untrained_L_vector.csv");
+      } catch (IOException e) {
+		e.printStackTrace();
+      }
+      
       for (int epoch = 0; epoch < iterations; epoch++) {
         System.out.println("Iteration - " + epoch);
         
@@ -125,6 +131,13 @@ public class WindowModel {
         
         System.out.println("Objective: " + obj);
       }
+      
+      try {
+		L.transpose().saveToFileCSV("tsne/trained_L_vector.csv");
+      } catch (IOException e) {
+		e.printStackTrace();
+      }
+      
 	}
   
 	public void test(List<Datum> testData, boolean outputGold){
@@ -146,6 +159,7 @@ public class WindowModel {
 	        
 	        if(label.equals(">>>BLANKLINE<<<")) {
 	        	out.format("\n");
+	        	continue;
 	        }
 	        
 	        List<Integer> windowIndices = getWindowIndices(testData, i);
@@ -183,9 +197,9 @@ public class WindowModel {
 	  double recall = (double)truePositives/goldPositives;
       double f1 = (2.0*precision*recall)/(precision+recall);
       
-      System.out.println("Precision - " + precision);
-      System.out.println("Recall - " + recall);
-      System.out.println("F1 score - " + f1);
+      System.out.println("Single Token Precision - " + precision);
+      System.out.println("Single Token Recall - " + recall);
+      System.out.println("Single Token F1 score - " + f1);
 	}
   
   
