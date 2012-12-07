@@ -124,6 +124,10 @@ Regularized Cost Functions
 SGD Training and Implementation
 \end_layout
 
+\begin_layout Subsection
+Results
+\end_layout
+
 \begin_layout Section
 Network Analysis
 \end_layout
@@ -186,7 +190,11 @@ From our graph, we can see that performance on the dev-test decreases when
 \end_layout
 
 \begin_layout Standard
-(## EXPLAIN ##)
+We believe this may be due to overfitting to the training set.
+ As our data size is rather small, the increase in our learning rates and
+ the number of hidden units will cause our data to conform far too closely
+ to the training set and thus perform rather poorly on the test set.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -514,10 +522,19 @@ The L vectors before and after training does not seem to have much difference
  training than before.
  The center cluster of individual vectors were also smaller than before
  training.
+ We believe additional clustering is observed because those words often
+ appear in the context window together in our training set and thus would
+ be grouped closer to each other after our training is done than the starter
+ L vectors given in the starter code.
 \end_layout
 
 \begin_layout Standard
-We believe this is due to (## EXPLAIN ##)
+In addition, we also observed about 90% of L vectors which were unchanged
+ during training as those words did not exist in the training set and thus
+ training on our current dataset would not be useful.
+ We believe that a larger dataset would definitely be more useful for more
+ coverage of all the L vectors and improve the performance of our neural
+ network.
 \end_layout
 
 \begin_layout Subsection
