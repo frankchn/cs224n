@@ -75,13 +75,13 @@ public class WindowModel {
 	public void train(List<Datum> trainData ){
 	  int numTrainWords = trainData.size();
       SimpleMatrix trainExample = new SimpleMatrix(windowSize*wordSize, 1);
-
+/*
       try {
 		L.transpose().saveToFileCSV("tsne/untrained_L_vector.csv");
       } catch (IOException e) {
 		e.printStackTrace();
       }
-      
+  */
       for (int epoch = 0; epoch < iterations; epoch++) {
         System.out.println("Iteration - " + epoch);
         
@@ -131,13 +131,13 @@ public class WindowModel {
         
         System.out.println("Objective: " + obj);
       }
-      
+/*     
       try {
 		L.transpose().saveToFileCSV("tsne/trained_L_vector.csv");
       } catch (IOException e) {
 		e.printStackTrace();
       }
-      
+*/    
 	}
   
 	public void test(List<Datum> testData, boolean outputGold){
