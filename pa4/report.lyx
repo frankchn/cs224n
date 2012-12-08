@@ -234,7 +234,42 @@ SGD Training and Implementation
 \begin_layout Standard
 We translated and implemented the gradients and SGD in a straight-forward
  manner in Java.
- Please see our source code for more details.
+ However, we imporved on the given algorithm slightly, by implementing a
+ learning rate schedule.
+ Learning rate is a tradeoff between speed (larger learning rate will give
+ you faster convergence), and precision at the end (too large learning rate
+ will oscillate around minimum).
+ We use
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+learning\: rate=\frac{\alpha}{\beta+iteration}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $\alpha$
+\end_inset
+
+, 
+\begin_inset Formula $\beta$
+\end_inset
+
+ are parameters that need to be set.
+ This allows us to use a bigger learning rate at the start, which decays
+ as training progresses.
+ A smaller 
+\begin_inset Formula $\beta$
+\end_inset
+
+ results in a more aggressive decay.
 \end_layout
 
 \begin_layout Subsection
@@ -414,7 +449,16 @@ We believe this may be due to overfitting to the training set.
  As our data size is rather small, the increase in our learning rates and
  the number of hidden units will cause our data to conform far too closely
  to the training set and thus perform rather poorly on the test set.
- 
+ This could perhaps have been fixed with more aggressive regularization
+ by increasing weight decay.
+\end_layout
+
+\begin_layout Standard
+At every iteration we output the value of the objective function.
+ Based on this, we believe we run sufficient iterations of training.
+ However, to be really sure, what we could have done is to validate the
+ trained model every so often and plot the results to verify that additional
+ training does not result in better test scores.
 \end_layout
 
 \begin_layout Subsection
@@ -575,6 +619,9 @@ Our system often misclassifies non-English first and last names as
 \end_inset
 
  reference or not.
+ One way to provide additional features to the classifier would be to augment
+ the word vector with a feature describing the capitilization of the word
+ (such as all capitals, first capital, last capital).
 \end_layout
 
 \begin_layout Paragraph
@@ -601,7 +648,7 @@ Wang
 \end_layout
 
 \begin_layout Paragraph
-Shorted Names (e.g.
+Shortened Names (e.g.
  P., J.)
 \end_layout
 
