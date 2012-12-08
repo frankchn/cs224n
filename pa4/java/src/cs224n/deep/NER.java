@@ -37,8 +37,8 @@ public class NER {
 					model.initWeights();
 				
 					model.train(trainData);
-					model.test(trainData, true);
-					model.test(testData, true);
+					model.test(trainData, false);
+					model.test(testData, false);
 				}
 			}
 		}
