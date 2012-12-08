@@ -108,16 +108,107 @@ Frank wrote the code to load in and preprocess the matrices given while
 Feedforward and Cost Functions
 \end_layout
 
+\begin_layout Standard
+As in the notes, we denote the forward propagation stage, by the following
+ equations, eventually resulting in a prediction 
+\begin_inset Formula $h_{\theta}(x)$
+\end_inset
+
+ of whether the word is a PERSON.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+z & = & Wx+b_{1}\\
+a & = & f(z)\qquad\mathrm{where}\; f(x)=\tanh(x)\\
+h & = & g(U^{T}a+b_{2})\qquad\mathrm{where}\: g(x)=\frac{1}{1+e^{-x}}\\
+J(\theta) & = & \frac{1}{m}\sum\left[-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i0})h_{\theta}(x^{(i)})\right]\:+\;\frac{C}{2m}\left[\sum_{j=1}^{nC}\sum_{k=1}^{H}W_{kj}^{2}+\sum_{k=1}^{H}U_{k}^{2}\right]
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Gradients
 \end_layout
 
-\begin_layout Subsection
-Cost Function of Neural Networks
+\begin_layout Standard
+Here, we present the derived gradients used to train the model.
+ Full derivations can be found in the appendix.
 \end_layout
 
-\begin_layout Subsection
-Regularized Cost Functions
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial J(\theta)}{\partial U} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial U}\right]+\frac{C}{m}U\qquad\mathrm{since\:}g'(x)=g(x)(1-g(x))\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\, a^{(i)}\right]+\frac{C}{m}U\\
+\frac{\partial J(\theta)}{\partial b_{2}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\right]\\
+\frac{\partial J(\theta)}{\partial W_{kj}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial W_{kj}}\right]+\frac{C}{2m}(2W_{kj})\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}f'(z_{k}^{(i)})\frac{\partial(W_{k\cdot}x^{(i)}+(b_{1})_{k})}{\partial W_{kj}}\right]+\frac{C}{m}W_{kj}\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}(1-\tanh^{2}z_{k}^{(i)})x_{j}^{(i)}\right]+\frac{C}{m}W_{kj}\\
+\mathrm{Let}\:\delta_{k}^{(i)} & = & \left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}(1-\tanh^{2}z_{k}^{(i)})\\
+\frac{\partial J(\theta)}{\partial W} & = & \frac{1}{m}\sum_{i=1}^{m}\delta^{(i)}\left(x^{(i)}\right)^{T}+\frac{C}{m}W\\
+\frac{\partial J(\theta)}{\partial(b_{1})_{i}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}f'(z_{k}^{(i)})\frac{\partial(W_{k\cdot}x^{(i)}+(b_{1})_{k})}{\partial W_{kj}}\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}f'(z_{k}^{(i)})\right]\\
+\frac{\partial J(\theta)}{\partial b_{i}} & = & \frac{1}{m}\sum_{i=1}^{m}\delta^{(i)}\\
+\frac{\partial J(\theta)}{\partial L_{k}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial L_{k}}\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\left(\sum_{j=1}^{H}U_{j}f'(z_{j}^{(i)})\frac{\partial(W_{j\cdot}x^{(i)}+(b_{1})_{j})}{\partial L_{k}}\right)\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\left(\sum_{j=1}^{H}U_{j}f'(z_{j}^{(i)})W_{jk}\right)\right]\\
+\frac{\partial J(\theta)}{\partial L} & = & \frac{1}{m}\sum_{i=1}^{m}W^{T}\delta^{(i)}
+\end{eqnarray*}
+
+\end_inset
+
+
+\begin_inset Formula 
+\begin{eqnarray*}
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\\
+\end{eqnarray*}
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -653,6 +744,49 @@ CS229 Lecture Notes 1 Page 16
 \end_inset
 
 .
+\end_layout
+
+\begin_layout Section
+\start_of_appendix
+Gradient Derivations
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+z & = & Wx+b_{1}\\
+a & = & f(z)\qquad\mathrm{where}\; f(x)=\tanh(x)\\
+h & = & g(U^{T}a+b_{2})\qquad\mathrm{where}\: g(x)=\frac{1}{1+e^{-x}}\\
+J(\theta) & = & \frac{1}{m}\sum_{i=1}^{m}\left[-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i0})h_{\theta}(x^{(i)})\right]\:+\;\frac{C}{2m}\left[\sum_{j=1}^{nC}\sum_{k=1}^{H}W_{kj}^{2}+\sum_{k=1}^{H}U_{k}^{2}\right]\\
+\frac{\partial J(\theta)}{\partial U} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)\frac{\partial h_{\theta}(x^{(i)})}{\partial U}\right]+\frac{C}{2m}(2U)\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial U}\right]+\frac{C}{m}U\qquad\mathrm{since\:}g'(x)=g(x)(1-g(x))\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\, a^{(i)}\right]+\frac{C}{m}U\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\, a^{(i)}\right]+\frac{C}{m}U\\
+\frac{\partial J(\theta)}{\partial b_{2}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)\frac{\partial h_{\theta}(x^{(i)})}{\partial U}\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial U}\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\right]\\
+\frac{\partial J(\theta)}{\partial W_{kj}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial W_{kj}}\right]+\frac{C}{2m}(2W_{kj})\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}\frac{\partial f(z_{k}^{(i)})}{\partial W_{kj}}\right]+\frac{C}{m}W_{kj}\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}f'(z_{k}^{(i)})\frac{\partial(W_{k\cdot}x^{(i)}+(b_{1})_{k})}{\partial W_{kj}}\right]+\frac{C}{m}W_{kj}\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}f'(z_{k}^{(i)})x_{j}^{(i)}\right]+\frac{C}{m}W_{kj}\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}(1-\tanh^{2}z_{k}^{(i)})x_{j}^{(i)}\right]+\frac{C}{m}W_{kj}\\
+\mathrm{Let}\:\delta_{k}^{(i)} & = & \left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}(1-\tanh^{2}z_{k}^{(i)})\\
+\frac{\partial J(\theta)}{\partial W} & = & \frac{1}{m}\sum_{i=1}^{m}\delta^{(i)}\left(x^{(i)}\right)^{T}+\frac{C}{m}W\\
+\frac{\partial J(\theta)}{\partial(b_{1})_{i}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial(b_{1})_{i}}\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}\frac{\partial f(z_{k}^{(i)})}{\partial(b_{1})_{i}}\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}f'(z_{k}^{(i)})\frac{\partial(W_{k\cdot}x^{(i)}+(b_{1})_{k})}{\partial W_{kj}}\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)U_{k}f'(z_{k}^{(i)})\right]\\
+\frac{\partial J(\theta)}{\partial b_{i}} & = & \frac{1}{m}\sum_{i=1}^{m}\delta^{(i)}\\
+\frac{\partial J(\theta)}{\partial L_{k}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial L_{k}}\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\left(\sum_{j=1}^{H}U_{j}\frac{\partial f(z_{j}^{(i)})}{\partial L_{k}}\right)\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\left(\sum_{j=1}^{H}U_{j}f'(z_{j}^{(i)})\frac{\partial(W_{j\cdot}x^{(i)}+(b_{1})_{j})}{\partial L_{k}}\right)\right]\\
+ & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\left(\sum_{j=1}^{H}U_{j}f'(z_{j}^{(i)})W_{jk}\right)\right]\\
+\frac{\partial J(\theta)}{\partial L} & = & \frac{1}{m}\sum_{i=1}^{m}W^{T}\delta^{(i)}
+\end{eqnarray*}
+
+\end_inset
+
+
 \end_layout
 
 \end_body
