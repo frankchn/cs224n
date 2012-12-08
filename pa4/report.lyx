@@ -195,7 +195,7 @@ Here, we present the derived gradients used to train the model.
 \begin_layout Standard
 \begin_inset Formula 
 \begin{eqnarray*}
-\frac{\partial J(\theta)}{\partial b_{i}} & = & \frac{1}{m}\sum_{i=1}^{m}\delta^{(i)}
+\frac{\partial J(\theta)}{\partial b_{1}} & = & \frac{1}{m}\sum_{i=1}^{m}\delta^{(i)}
 \end{eqnarray*}
 
 \end_inset
@@ -892,7 +892,7 @@ J(\theta) & = & \frac{1}{m}\sum_{i=1}^{m}\left[-y^{(i)}(1-h_{\theta}(x^{(i)}))+(
  &  & \mathrm{since\:}g'(x)=g(x)(1-g(x))\\
  & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\, a^{(i)}\right]+\frac{C}{m}U\\
  & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\, a^{(i)}\right]+\frac{C}{m}U\\
-\frac{\partial J(\theta)}{\partial b_{2}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)\frac{\partial h_{\theta}(x^{(i)})}{\partial U}\right]\\
+\frac{\partial J(\theta)}{\partial b_{1}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)\frac{\partial h_{\theta}(x^{(i)})}{\partial U}\right]\\
  & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial U}\right]\\
  & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}\frac{1}{h_{\theta}(x^{(i)})}+(1-y^{(i)})\frac{1}{1-h_{\theta}(x^{(i)})}\right)h_{\theta}(x^{(i)})(1-h_{\theta}(x^{(i)}))\right]\\
 \frac{\partial J(\theta)}{\partial W_{kj}} & = & \frac{1}{m}\sum_{i=1}^{m}\left[\left(-y^{(i)}(1-h_{\theta}(x^{(i)}))+(1-y^{(i)})h_{\theta}(x^{(i)})\right)\frac{\partial(U^{T}a^{(i)}+b_{2})}{\partial W_{kj}}\right]+\frac{C}{2m}(2W_{kj})\\
